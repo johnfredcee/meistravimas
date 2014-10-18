@@ -240,8 +240,9 @@ void Program::use() const
 
 void Program::unUse() const
 {
+	extern GLenum show_gl_error(GLenum error);
 	glUseProgram(0);
-	SDL_assert(glGetError() == GL_NO_ERROR);
+	SDL_assert(show_gl_error(glGetError()) == GL_NO_ERROR);
 }
 
 bool Program::inUse() const
