@@ -4,6 +4,35 @@
 namespace venk
 {
 class Program;
+class Buffer;
+
+class BufferManagerService : public Service<BufferManagerService>
+{
+	friend class Buffer;
+public:
+	typedef BufferManagerService *ServicePtr_t;
+
+	/**
+	 * Initialse the buffer  subsystem
+	 * @return true if successful
+	 */
+	static bool initialise(BufferManagerService* self);
+	
+	/**
+	 * Shutdown the buffer subsystem.
+	 * @return returns true if successful
+	 */
+	static bool shutdown(BufferManagerService* self);
+
+	/** Actually create a buffer using the service */
+	std::shared_ptr<Buffer> make_buffer(GLenum		target,
+										const void  *bufferData,
+										GLenum		type,
+										GLsizei		count,
+										GLsizei		componentCount = 1,
+										GLenum		usage = GL_STATIC_DRAW);
+
+};
 
 
 class Buffer {

@@ -59,7 +59,7 @@ void init_buffers()
 
 }
 
-void render(SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* texture, Program *simple)
+void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple)
 {
 	(void) simple;
 
@@ -68,11 +68,13 @@ void render(SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* texture, Pr
 
 //	SDL_assert(simple->isValid());
 	simple->use();
+	texture->select();
 	//SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+	
+	texture->deselect();
 	simple->unUse();
 	SDL_GL_SwapWindow(window);
 	SDL_Delay(5000);
-
 }
 
 int main(int argc, char **argv)
@@ -159,7 +161,7 @@ int main(int argc, char **argv)
 					ServiceRegistry<TextureService>::initialise();
 					ServiceCheckout<TextureService> textures;
 					textures->setRenderer(renderer);
-					std::shared_ptr<Texture> tex(textures->makeTexture(img.get()));
+					std::shared_ptr<Texture> tex(textures->makeTexture(img.get(), true));
 					ServiceRegistry<ProgramService>::initialise();
 					ServiceCheckout<ProgramService> programs;
 					std::shared_ptr<Program> simple(programs->loadProgram("test"));
@@ -176,7 +178,7 @@ int main(int argc, char **argv)
 						projParam.value.mat4[i] = projection.elements[i];
 					renderState->set("projection", projParam);
 					if (tex) {
-						render(window.get(), renderer.get(), tex->getSDL_Texture(), simple.get());
+						render(window.get(), renderer.get(), tex.get(), simple.get());
 					} else {
 						std::cerr << "Creating texture failed" << std::endl;
 					}

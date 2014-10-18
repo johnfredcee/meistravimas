@@ -16,6 +16,29 @@
 namespace venk
 {
 
+bool BufferManagerService::initialise(BufferManagerService* self)
+{
+	(void) self;
+	return true;
+}
+
+bool BufferManagerService::shutdown(BufferManagerService* self)
+{
+	(void) self;
+	return true;
+}
+
+std::shared_ptr<Buffer> make_buffer(GLenum		target,
+										const void  *bufferData,
+										GLenum		type,
+										GLsizei		count,
+										GLsizei		componentCount = 1,
+										GLenum		usage = GL_STATIC_DRAW)
+{
+	return std::make_shared<Buffer>(target, bufferData, type, count, componentCount, usage);
+}
+
+
 /**
  * Construct a vertex or index buffer
  * @param target GL_ARRAY_BUFFER for a buffer of elements, GL_ELEMENT_ARRAY_BUFFER for a buffer of indices
