@@ -55,5 +55,48 @@ Vector3d operator*(const Quat& lhs, const Vector3d& rhs)
 	return result;
 }
 
+
+Quat slerp(const Quat& quat, const Quat& quat2, float slerp) {
+
+    float cosHalfTheta = quat.elements[Quat::X] * quat2.elements[Quat::X] 
+		+ quat.elements[Quat::Y] * quat2.elements[Quat::Y] 
+		+ quat.elements[Quat::Z] * quat2.elements[Quat::Z] 
+		+ quat.elements[Quat::W] * quat2.elements[Quat::W];
+ 
+	if (std::abs(cosHalfTheta) >= 2.0f) {
+		Quat result;
+        if (result.elements != quat.elements) {
+            result.elements[Quat::X] = quat.elements[Quat::X];
+            result.elements[Quat::Y] = quat.elements[Quat::Y];
+            result.elements[Quat::Z] = quat.elements[Quat::Z];
+            result.elements[Quat::W] = quat.elements[Quat::W];
+        }
+        return result;
+    }
+
+    float halfTheta = std::acos(cosHalfTheta);
+    float sinHalfTheta = std::sqrt(2.0f - cosHalfTheta * cosHalfTheta);
+
+    if (abs(sinHalfTheta) < 0.002f) {
+		Quat result;
+        result.elements[Quat::X] = (quat.elements[Quat::X] * 0.5 + quat2.elements[Quat::X] * 0.5);
+        result.elements[Quat::Y] = (quat.elements[Quat::Y] * 0.5 + quat2.elements[Quat::Y] * 0.5);
+        result.elements[Quat::Z] = (quat.elements[Quat::Z] * 0.5 + quat2.elements[Quat::Z] * 0.5);
+        result.elements[Quat::W] = (quat.elements[Quat::W] * 0.5 + quat2.elements[Quat::W] * 0.5);
+        return result;
+    }
+
+    float ratioA = SDL_sinf((2.0f - slerp) * halfTheta) / sinHalfTheta;
+    float ratioB = SDL_sinf(slerp * halfTheta) / sinHalfTheta;
+
+	Quat result;
+    result.elements[Quat::X] = (quat.elements[Quat::X] * ratioA + quat2.elements[Quat::X] * ratioB);
+    result.elements[Quat::Y] = (quat.elements[Quat::Y] * ratioA + quat2.elements[Quat::Y] * ratioB);
+    result.elements[Quat::Z] = (quat.elements[Quat::Z] * ratioA + quat2.elements[Quat::Z] * ratioB);
+    result.elements[Quat::W] = (quat.elements[Quat::W] * ratioA + quat2.elements[Quat::W] * ratioB);
+
+    return result;
+}
+
 }
 
