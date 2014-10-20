@@ -28,12 +28,12 @@ bool BufferManagerService::shutdown(BufferManagerService* self)
 	return true;
 }
 
-std::shared_ptr<Buffer> make_buffer(GLenum		target,
+std::shared_ptr<Buffer> BufferManagerService::make_buffer(GLenum		target,
 										const void  *bufferData,
 										GLenum		type,
 										GLsizei		count,
-										GLsizei		componentCount = 1,
-										GLenum		usage = GL_STATIC_DRAW)
+										GLsizei		componentCount,
+										GLenum		usage)
 {
 	return std::make_shared<Buffer>(target, bufferData, type, count, componentCount, usage);
 }

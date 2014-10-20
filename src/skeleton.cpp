@@ -22,6 +22,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "program.h"
+#include "buffer.h"
 #include "renderstate.h"
 #include <res_path.h>
 
@@ -42,8 +43,9 @@ void render_texture(SDL_Texture *tex, SDL_Renderer* ren, int x, int y)
     SDL_RenderCopy(ren, tex, NULL, &dst);
 }
 
+using bufferPair_t = std::pair< std::shared_ptr<Buffer>, std::shared_ptr<Buffer> >;
 
-void init_buffers()
+bufferPair_t init_buffers()
 {
 	/*
 	 * Data used to seed our vertex array and element array buffers:
@@ -57,20 +59,30 @@ void init_buffers()
 
 	static const GLushort testElements[] = { 0, 1, 2, 3 };
 
+	ServiceCheckout<BufferManagerService> buffers;
+	
+	auto vb = buffers->make_buffer(GL_ARRAY_BUFFER,  (const void*) testVertices, GL_FLOAT, 4, 2, GL_STATIC_DRAW);
+	auto ib = buffers->make_buffer(GL_ELEMENT_ARRAY_BUFFER, (const void*) testElements, GL_UNSIGNED_SHORT, 4, 1, GL_STATIC_DRAW);
+	bufferPair_t result = make_pair(vb, ib);
+	return result;
 }
 
-void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple)
+void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple, bufferPair_t buffers)
 {
-	(void) simple;
-
+	(void) renderer;
 	// Clear the color and depth buffers
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-//	SDL_assert(simple->isValid());
 	simple->use();
 	texture->select();
-	//SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-	
+	simple->setUniformSampler("textureMap", 0, texture);
+	auto vb = buffers.first;
+	auto ib = buffers.second;
+	vb->bindAttribute(simple, "vVertex");
+	ib->bindIndices();
+	ib->draw();
+	ib->unbindIndices();
+	vb->unbindAttribute(simple, "vVertex");
 	texture->deselect();
 	simple->unUse();
 	SDL_GL_SwapWindow(window);
@@ -159,30 +171,36 @@ int main(int argc, char **argv)
 				std::shared_ptr<Image> img(images->loadImage("test.tga"));
 				if (img) {
 					ServiceRegistry<TextureService>::initialise();
-					ServiceCheckout<TextureService> textures;
-					textures->setRenderer(renderer);
-					std::shared_ptr<Texture> tex(textures->makeTexture(img.get(), true));
 					ServiceRegistry<ProgramService>::initialise();
-					ServiceCheckout<ProgramService> programs;
-					std::shared_ptr<Program> simple(programs->loadProgram("test"));
-					SDL_assert(simple->isValid());			
-					// ortho view, 100 units deep
-					Matrix44 projection;
-					projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, 0.0f,  100.0f);
+					ServiceRegistry<BufferManagerService>::initialise();
 					ServiceRegistry<RenderStateService>::initialise();
-					ServiceCheckout<RenderStateService> renderState;
-					// to do - clean this up with a template make_parameter fn
-					RenderParameter projParam;
-					projParam.type = eMAT4;
-					for(Uint32 i = 0; i < 16; i++)
-						projParam.value.mat4[i] = projection.elements[i];
-					renderState->set("projection", projParam);
-					if (tex) {
-						render(window.get(), renderer.get(), tex.get(), simple.get());
-					} else {
-						std::cerr << "Creating texture failed" << std::endl;
+					{
+						ServiceCheckout<TextureService> textures;
+						textures->setRenderer(renderer);
+						std::shared_ptr<Texture> tex(textures->makeTexture(img.get(), true));
+						ServiceCheckout<ProgramService> programs;
+						std::shared_ptr<Program> simple(programs->loadProgram("test"));
+						SDL_assert(simple->isValid());			
+						// ortho view, 100 units deep
+						Matrix44 projection;
+						projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, 0.0f,  100.0f);
+						bufferPair_t buffers(init_buffers());
+
+						ServiceCheckout<RenderStateService> renderState;
+						// to do - clean this up with a template make_parameter fn
+						RenderParameter projParam;
+						projParam.type = eMAT4;
+						for(Uint32 i = 0; i < 16; i++)
+							projParam.value.mat4[i] = projection.elements[i];
+						renderState->set("projection", projParam);
+						if (tex) {
+							render(window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+						} else {
+							std::cerr << "Creating texture failed" << std::endl;
+						}
 					}
 					ServiceRegistry<RenderStateService>::shutdown();
+					ServiceRegistry<BufferManagerService>::shutdown();
 					ServiceRegistry<ProgramService>::shutdown();
 					ServiceRegistry<TextureService>::shutdown();
 					SDL_GL_DeleteContext(glctx);
