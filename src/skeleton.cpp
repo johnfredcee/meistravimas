@@ -24,6 +24,7 @@
 #include "program.h"
 #include "buffer.h"
 #include "renderstate.h"
+#include "timer.h"
 #include <res_path.h>
 
 using namespace venk;
@@ -67,9 +68,10 @@ bufferPair_t init_buffers()
 	return result;
 }
 
-void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple, bufferPair_t buffers)
+void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple, bufferPair_t buffers)
 {
 	(void) renderer;
+	(void) alpha;
 	// Clear the color and depth buffers
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -87,6 +89,12 @@ void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Progra
 	simple->unUse();
 	SDL_GL_SwapWindow(window);
 }
+
+void update(double t, double dt) {
+	(void) t;
+	(void) dt;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -193,9 +201,27 @@ int main(int argc, char **argv)
 							projParam.value.mat4[i] = projection.elements[i];
 						renderState->set("projection", projParam);
 						if (tex) {
-							bool quit = false;
+							double  t    = 0.0;
+							double  dt   = 0.01;
+							double currentTime = timeNow();
+							double accumulator = dt;
+							bool	quit = false;
 							SDL_Event e;
 							while (!quit) {
+								double newTime = timeNow();
+								double frameTime = newTime - currentTime;
+								if (frameTime > 0.25)
+									frameTime = 0.25;
+								currentTime = newTime;
+								accumulator += frameTime;
+								while ( accumulator >= dt ) {
+									update( t, dt );
+									t += dt;
+									accumulator -= dt;
+								}
+								const double alpha = accumulator / dt;
+								render(1.0 - alpha, window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+
 								//Handle events on queue 
 								while( SDL_PollEvent( &e ) != 0 ) { 
 									//User requests quit 
@@ -203,7 +229,6 @@ int main(int argc, char **argv)
 										quit = true; 
 									} 
 								}
-								render(window.get(), renderer.get(), tex.get(), simple.get(), buffers);
 							}
 						} else {
 							std::cerr << "Creating texture failed" << std::endl;
