@@ -86,7 +86,6 @@ void render(SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Progra
 	texture->deselect();
 	simple->unUse();
 	SDL_GL_SwapWindow(window);
-	SDL_Delay(5000);
 }
 
 int main(int argc, char **argv)
@@ -194,7 +193,18 @@ int main(int argc, char **argv)
 							projParam.value.mat4[i] = projection.elements[i];
 						renderState->set("projection", projParam);
 						if (tex) {
-							render(window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+							bool quit = false;
+							SDL_Event e;
+							while (!quit) {
+								//Handle events on queue 
+								while( SDL_PollEvent( &e ) != 0 ) { 
+									//User requests quit 
+									if( e.type == SDL_QUIT ) { 
+										quit = true; 
+									} 
+								}
+								render(window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+							}
 						} else {
 							std::cerr << "Creating texture failed" << std::endl;
 						}
