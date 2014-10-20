@@ -10,6 +10,54 @@ public:
 	static const std::size_t tuple_size = 16;
 	static const eScalarType element_type = BufferElementType<float>::element_type;
 
+	/* construct, no initialisation */
+	Matrix44() {
+	}
+
+	Matrix44(const Quat& q, const Vector3d& v)
+	{
+
+		float x = q.elements[Quat::X];
+		float y = q.elements[Quat::Y];
+		float z = q.elements[Quat::Z];
+		float w = q.elements[Quat::W];
+
+        float x2 = x + x;
+		float y2 = y + y;
+        float z2 = z + z;
+
+        float xx = x * x2;
+        float xy = x * y2;
+        float xz = x * z2;
+        float yy = y * y2;
+        float yz = y * z2;
+        float zz = z * z2;
+        float wx = w * x2;
+        float wy = w * y2;
+        float wz = w * z2;
+
+		elements[0] = 1.0f - (yy + zz);
+		elements[1] = xy + wz;
+		elements[2] = xz - wy;
+		elements[3] = 0.0f;
+
+		elements[4] = xy - wz;
+		elements[5] = 1.0f - (xx + zz);
+		elements[6] = yz + wx;
+		elements[7] = 0.0f;
+
+		elements[8] = xz + wy;
+		elements[9] = yz - wx;
+		elements[10] = 1.0f - (xx + yy);
+		elements[11] = 0.0f;
+
+		elements[12] = v.elements[Vector3d::X];
+		elements[13] = v.elements[Vector3d::Y];
+		elements[14] = v.elements[Vector3d::Z];
+		elements[15] = 1.0f;
+
+	}
+
 	void identity() {
 		elements[1] = elements[2] = elements[3] = elements[4] = 0.0f;
 		elements[6] = elements[7] = elements[8] = elements[9] = 0.0f;
@@ -27,7 +75,12 @@ public:
 	}
 
 	void translation(const Vector3d& translation) {
-		identity();
+
+		elements[1] = elements[2] = elements[3] = elements[4] = 0.0f;
+		elements[6] = elements[7] = elements[8] = elements[9] = 0.0f;
+		elements[11] = elements[12] = 0.0f;
+		elements[0] = elements[5] = elements[10] = 1.0f;
+
 		elements[13] = translation.elements[Vector3d::X];
 		elements[14] = translation.elements[Vector3d::Y];
 		elements[15] = translation.elements[Vector3d::Z];
@@ -60,7 +113,12 @@ public:
 	}
 
 	void scale(const Vector3d& scale) {
-		zero();
+
+		elements[1] = elements[2] = elements[3] = elements[4] = 0.0f;
+		elements[6] = elements[7] = elements[8] = elements[9] = 0.0f;
+		elements[11] = elements[12] = elements[13] = elements[14] = 0.0f;
+		elements[15] = 1.0f;
+
 		elements[0] =  scale.elements[Vector3d::X];
 		elements[5] =  scale.elements[Vector3d::Y];
 		elements[10] = scale.elements[Vector3d::Z];
@@ -87,6 +145,37 @@ public:
 		elements[14] = ( far + near ) / ( far - near );
 		elements[15] = 1.0f;
 	}
+
+    void frustum(float left, float right, float bottom, float top, float near, float far) {
+		float rl = (right - left);
+		float tb = (top - bottom);
+		float fn = (far - near);
+
+		elements[0] = (near * 2.0f) / rl;
+		elements[1] = 0.0f;
+		elements[2] = 0.0f;
+		elements[3] = 0.0f;
+		elements[4] = 0.0f;
+		elements[5] = (near * 2.0f) / tb;
+		elements[6] = 0.0f;
+		elements[7] = 0.0f;
+		elements[8] = (right + left) / rl;
+		elements[9] = (top + bottom) / tb;
+		elements[10] = -(far + near) / fn;
+		elements[11] = -1.0f;
+		elements[12] = 0.0f;
+		elements[13] = 0.0f;
+		elements[14] = -(far * near * 2.0f) / fn;
+		elements[15] = 0.0f;
+		return;
+	}
+
+	void persp(float fovy, float aspect, float near, float far) {
+		float top = near * tanf(fovy * M_PI / 360.0);
+		float  right = top * aspect;
+		frustum(-right, right, -top, top, near, far);
+	}
+
 
 	void view(const Vector3d& at, Vector3d& view) {
 		Vector3d k(0.0f, 1.0f, 0.0f);

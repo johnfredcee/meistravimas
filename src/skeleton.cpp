@@ -11,6 +11,7 @@
 
 #include "tuple.h"
 #include "threedee.h"
+#include "quat.h"
 #include "matrix44.h"
 #include "hashstring.h"
 #include "locator.h"
@@ -190,7 +191,7 @@ int main(int argc, char **argv)
 						SDL_assert(simple->isValid());			
 						// ortho view, 100 units deep
 						Matrix44 projection;
-						projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, 0.0f,  100.0f);
+						//projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, 0.0f,  100.0f);
 						bufferPair_t buffers(init_buffers());
 
 						ServiceCheckout<RenderStateService> renderState;
