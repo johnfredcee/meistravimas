@@ -40,15 +40,6 @@ namespace venk
                 return *this;
             }
 
-			Vector3d operator*(float scalar)
-			{
-				return Vector3d(elements[Vector3d::X] * scalar, elements[Vector3d::Y] * scalar, elements[Vector3d::Z] * scalar);
-			}
-
-			Vector3d operator+(float scalar)
-			{
-				return Vector3d(elements[Vector3d::X] + scalar, elements[Vector3d::Y] + scalar, elements[Vector3d::Z] + scalar);
-			}
 
     };
 

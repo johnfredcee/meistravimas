@@ -77,7 +77,7 @@ namespace venk
 
 	/**
 	 * POD tuple type with N elements of type T which can be used as a
-	 * basis for vectors, etc. Pretty much obsoleter as now in C++11
+	 * basis for vectors, etc. Pretty much obsolete as now in C++11
 	 */
 	template <typename T, std::size_t N> class Tuple
 	{
