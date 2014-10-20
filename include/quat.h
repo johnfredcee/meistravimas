@@ -3,6 +3,7 @@
 
 namespace venk
 {
+	class Vector3d;
 
 	class Quat : public Tuple<float,4>
 	{
@@ -70,6 +71,9 @@ namespace venk
 
 	}; /* class Quaternion */
 
+	Quat operator*(const Quat& lhs, const Quat& rhs);
+	Vector3d operator*(const Quat& lhs, const Vector3d& rhs);
+	Quat slerp(const Quat& quat, const Quat& quat2, float slerp);
 
 }
 
