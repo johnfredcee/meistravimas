@@ -231,35 +231,35 @@ public:
 		return;
 	}
 
-	void lookAt(const Vector3d& at, Vector3d& direction) {
-		Vector3d k(0.0f, 1.0f, 0.0f);
-		direction.normalise();
-		Vector3d up(k - (direction * dot(k, direction)));
-		up.normalise();
-		Vector3d side(cross(direction, up));
-		side.normalise();
-		elements[0] = side.elements[0];
-		elements[1] = up.elements[0];
-		elements[2] = -direction.elements[0];
-		elements[3] = 0.0f;
-		elements[4] = side.elements[1];
-		elements[5] = up.elements[1];
-		elements[6] = -direction.elements[1];
-		elements[7] = 0.0f;
-		elements[8] = side.elements[2];
-		elements[9] = up.elements[2];
-		elements[10] = -direction.elements[2];
-		elements[11] = 0.0f;
-		elements[12] = -dot(side, at);
-		elements[13] = -dot(up, at);
-		elements[14] = -dot(direction, at);
-		elements[15] = 1.0f;
-	}
+	/* void lookAt(const Vector3d& at, Vector3d& direction) { */
+	/* 	Vector3d k(0.0f, 1.0f, 0.0f); */
+	/* 	direction.normalise(); */
+	/* 	Vector3d up(k - (direction * dot(k, direction))); */
+	/* 	up.normalise(); */
+	/* 	Vector3d side(cross(direction, up)); */
+	/* 	side.normalise(); */
+	/* 	elements[0] = side.elements[0]; */
+	/* 	elements[1] = up.elements[0]; */
+	/* 	elements[2] = -direction.elements[0]; */
+	/* 	elements[3] = 0.0f; */
+	/* 	elements[4] = side.elements[1]; */
+	/* 	elements[5] = up.elements[1]; */
+	/* 	elements[6] = -direction.elements[1]; */
+	/* 	elements[7] = 0.0f; */
+	/* 	elements[8] = side.elements[2]; */
+	/* 	elements[9] = up.elements[2]; */
+	/* 	elements[10] = -direction.elements[2]; */
+	/* 	elements[11] = 0.0f; */
+	/* 	elements[12] = -dot(side, at); */
+	/* 	elements[13] = -dot(up, at); */
+	/* 	elements[14] = -dot(direction, at); */
+	/* 	elements[15] = 1.0f; */
+	/* } */
 
-	void lookAt(const Vector3d& at, float x, float y, float z) {
-		Vector3d direction(x - at.elements[Vector3d::X], y - at.elements[Vector3d::Y], z - at.elements[Vector3d::Z]);
-		lookAt(at, direction);
-	}
+	/* void lookAt(const Vector3d& at, float x, float y, float z) { */
+	/* 	Vector3d direction(x - at.elements[Vector3d::X], y - at.elements[Vector3d::Y], z - at.elements[Vector3d::Z]); */
+	/* 	lookAt(at, direction); */
+	/* } */
 
     void frustum(float left, float right, float bottom, float top, float near, float far) {
 		float rl = (right - left);

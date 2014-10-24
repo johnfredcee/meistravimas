@@ -132,7 +132,6 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	// perspective view - fairly generous 45.0f fov
 	Matrix44 projection;
 	projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
-	projection.identity();
 	Vector3d eyePos(1.0f, 3.0f, 5.0f);
 	Vector3d eyeTarget(0.0f, 0.0f, 0.0f);
 	// look at the origin
@@ -265,20 +264,20 @@ int main(int argc, char **argv)
 						// initialise the geometry
 						bufferPair_t buffers(init_cube());
 						// perspective view - fairly generous 45.0f fov
-						Matrix44 projection;
-						projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
-						Vector3d eyePos(1.0f, 3.0f, 5.0f);
-						// look at the origin
-						Matrix44 view;
-						view.lookAt(eyePos, 0.0f, 0.0, 0.0f);
-						ServiceCheckout<RenderStateService> renderState;
-						// to do - clean this up with a template make_parameter fn
-						RenderParameter projParam = projection;
-						RenderParameter viewParam = view;
-						RenderParameter eye = eyePos;
-						renderState->set("projection", projParam);
-						renderState->set("view", viewParam);
-						renderState->set("eye", eye);
+						// Matrix44 projection;
+						// projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
+						// Vector3d eyePos(1.0f, 3.0f, 5.0f);
+						// // look at the origin
+						// Matrix44 view;
+						// view.lookAt(eyePos, 0.0f, 0.0, 0.0f);
+						// ServiceCheckout<RenderStateService> renderState;
+						// // to do - clean this up with a template make_parameter fn
+						// RenderParameter projParam = projection;
+						// RenderParameter viewParam = view;
+						// RenderParameter eye = eyePos;
+						// renderState->set("projection", projParam);
+						// renderState->set("view", viewParam);
+						// renderState->set("eye", eye);
 						if (tex) {
 							double  t    = 0.0;
 							double  dt   = 0.01;
