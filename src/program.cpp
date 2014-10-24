@@ -266,65 +266,65 @@ Sint32 Program::operator[](const std::string& name) const
 	return it->second.location;
 }
 
-void Program::setUniform1f(Sint32 location, GLfloat *vec)
+void Program::setUniform1f(Sint32 location, const GLfloat *vec) 
 {
 	glUniform1fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform1f(const std::string& name, GLfloat* vec)
+void Program::setUniform1f(const std::string& name, const GLfloat* vec) 
 {
 	Sint32 location = getUniformLocation(name);
 	glUniform1fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform2f(Sint32 location, GLfloat *vec)
+void Program::setUniform2f(Sint32 location, const GLfloat *vec)
 {
 	glUniform2fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform2f(const std::string& name, GLfloat* vec)
+void Program::setUniform2f(const std::string& name, const GLfloat* vec)
 {
 	Sint32 location = getUniformLocation(name);
 	glUniform2fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform3f(Sint32 location, GLfloat *vec)
+void Program::setUniform3f(Sint32 location, const GLfloat *vec)
 {
 	glUniform3fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform3f(const std::string& name, GLfloat* vec)
+void Program::setUniform3f(const std::string& name, const GLfloat* vec)
 {
 	Sint32 location = getUniformLocation(name);
 	glUniform3fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform4f(Sint32 location, GLfloat *vec)
+void Program::setUniform4f(Sint32 location, const GLfloat *vec)
 {
 	glUniform4fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniform4f(const std::string& name, GLfloat* vec)
+void Program::setUniform4f(const std::string& name, const GLfloat* vec)
 {
 	Sint32 location = getUniformLocation(name);
 	glUniform4fv(location, 1, vec);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniformMat3f(Sint32 location, GLfloat *mat3)
+void Program::setUniformMat3f(Sint32 location, const GLfloat *mat3)
 {
 	glUniformMatrix3fv(location, 1, GL_FALSE, mat3);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniformMat3f(const std::string& name, GLfloat* mat3)
+void Program::setUniformMat3f(const std::string& name, const GLfloat* mat3)
 {
 	Sint32 location = getUniformLocation(name);
 	glUniformMatrix3fv(location, 1, GL_FALSE, mat3);
@@ -332,13 +332,13 @@ void Program::setUniformMat3f(const std::string& name, GLfloat* mat3)
 }
 
 
-void Program::setUniformMat4f(Sint32 location, GLfloat *mat4)
+void Program::setUniformMat4f(Sint32 location, const GLfloat *mat4)
 {
 	glUniformMatrix4fv(location, 1, GL_FALSE, mat4);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Program::setUniformMat4f(const std::string& name, GLfloat* mat4)
+void Program::setUniformMat4f(const std::string& name, const GLfloat* mat4)
 {
 	Sint32 location = getUniformLocation(name);
 	glUniformMatrix4fv(location, 1, GL_FALSE, mat4);

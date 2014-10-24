@@ -103,20 +103,20 @@ public:
     Sint32 getUniformLocation(const std::string& name) const;
 	Sint32 operator[](const std::string& name) const;
 
-	void  setUniform1f(const std::string& name, GLfloat *vec);
-    void  setUniform2f(const std::string& name, GLfloat *vec);
-    void  setUniform3f(const std::string& name, GLfloat *vec);
-    void  setUniform4f(const std::string& name, GLfloat *vec);
-    void  setUniformMat3f(const std::string& name, GLfloat *mat3);
-    void  setUniformMat4f(const std::string& name, GLfloat *mat4);
+	void  setUniform1f(const std::string& name, const GLfloat *vec);
+    void  setUniform2f(const std::string& name, const GLfloat *vec);
+    void  setUniform3f(const std::string& name, const GLfloat *vec);
+    void  setUniform4f(const std::string& name, const GLfloat *vec);
+    void  setUniformMat3f(const std::string& name, const GLfloat *mat3);
+    void  setUniformMat4f(const std::string& name, const GLfloat *mat4);
     void  setUniformSampler(const std::string& name, Sint32 textureUnit, Texture *texture);
 
-    void  setUniform1f(Sint32 location, GLfloat *vec);
-    void  setUniform2f(Sint32 location, GLfloat *vec);
-    void  setUniform3f(Sint32 location, GLfloat *vec);
-    void  setUniform4f(Sint32 location, GLfloat *vec);
-    void  setUniformMat3f(Sint32 location, GLfloat *mat3);
-    void  setUniformMat4f(Sint32 location, GLfloat *mat4);
+    void  setUniform1f(Sint32 location, const GLfloat *vec);
+    void  setUniform2f(Sint32 location, const GLfloat *vec);
+    void  setUniform3f(Sint32 location, const GLfloat *vec);
+    void  setUniform4f(Sint32 location, const GLfloat *vec);
+    void  setUniformMat3f(Sint32 location, const GLfloat *mat3);
+    void  setUniformMat4f(Sint32 location, const GLfloat *mat4);
     void  setUniformSampler(Sint32 location, Sint32 textureUnit, Texture *texture);
     virtual ~Program();
     bool isValid() const;

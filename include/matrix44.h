@@ -146,6 +146,37 @@ public:
 		elements[15] = 1.0f;
 	}
 
+
+	void lookAt(const Vector3d& at, Vector3d& direction) {
+		Vector3d k(0.0f, 1.0f, 0.0f);
+		direction.normalise();
+		Vector3d up(k - (direction * dot(k, direction)));
+		up.normalise();
+		Vector3d side(cross(direction, up));
+		side.normalise();
+		elements[0] = side.elements[0];
+		elements[1] = up.elements[0];
+		elements[2] = -direction.elements[0];
+		elements[3] = 0.0f;
+		elements[4] = side.elements[1];
+		elements[5] = up.elements[1];
+		elements[6] = -direction.elements[1];
+		elements[7] = 0.0f;
+		elements[8] = side.elements[2];
+		elements[9] = up.elements[2];
+		elements[10] = -direction.elements[2];
+		elements[11] = 0.0f;
+		elements[12] = -dot(side, at);
+		elements[13] = -dot(up, at);
+		elements[14] = -dot(direction, at);
+		elements[15] = 1.0f;
+	}
+
+	void lookAt(const Vector3d& at, float x, float y, float z) {
+		Vector3d direction(x - at.elements[Vector3d::X], y - at.elements[Vector3d::Y], z - at.elements[Vector3d::Z]);
+		lookAt(at, direction);
+	}
+
     void frustum(float left, float right, float bottom, float top, float near, float far) {
 		float rl = (right - left);
 		float tb = (top - bottom);
@@ -171,36 +202,12 @@ public:
 	}
 
 	void persp(float fovy, float aspect, float near, float far) {
+		// divide by 360.0f rather than 180.0f because this is half fov
 		float top = near * tanf(fovy * M_PI / 360.0);
 		float  right = top * aspect;
 		frustum(-right, right, -top, top, near, far);
 	}
 
-
-	void view(const Vector3d& at, Vector3d& view) {
-		Vector3d k(0.0f, 1.0f, 0.0f);
-		view.normalise();
-		Vector3d up(k - (view * dot(k, view)));
-		up.normalise();
-		Vector3d side(cross(view, up));
-		side.normalise();
-		elements[0] = side.elements[0];
-		elements[1] = up.elements[0];
-		elements[2] = -view.elements[0];
-		elements[3] = 0.0f;
-		elements[4] = side.elements[1];
-		elements[5] = up.elements[1];
-		elements[6] = -view.elements[1];
-		elements[7] = 0.0f;
-		elements[8] = side.elements[2];
-		elements[9] = up.elements[2];
-		elements[10] = -view.elements[2];
-		elements[11] = 0.0f;
-		elements[12] = -dot(side, at);
-		elements[13] = -dot(up, at);
-		elements[14] = -dot(view, at);
-		elements[15] = 1.0f;
-	}
 
 	Matrix44 operator*(const Matrix44& other)	{
 		Matrix44 tmp;

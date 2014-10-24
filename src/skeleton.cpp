@@ -12,6 +12,7 @@
 #include "tuple.h"
 #include "threedee.h"
 #include "quat.h"
+#include "colour.h"
 #include "matrix44.h"
 #include "hashstring.h"
 #include "locator.h"
@@ -69,16 +70,73 @@ bufferPair_t init_buffers()
 	return result;
 }
 
+bufferPair_t init_cube()
+{
+	// Create our vertex and index vectors
+	std::vector<GLfloat>  vert_list;
+	std::vector<GLushort> index_list;
+
+	// The cube's vertices
+	vert_list.push_back( -0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back( 0.5f);
+	vert_list.push_back(0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back( 0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back( -0.5f);
+	vert_list.push_back(-0.5f);
+	vert_list.push_back(-0.5f);
+
+	// The cube's faces (not represented by quads, but rather triangles)
+	index_list.push_back(1); index_list.push_back(5); index_list.push_back(6); // Right Face Tri 1
+	index_list.push_back(6); index_list.push_back(2); index_list.push_back(1); // Right Face Tri 2
+	index_list.push_back(5); index_list.push_back(4); index_list.push_back(7); // Back Face Tri 1
+	index_list.push_back(7); index_list.push_back(6); index_list.push_back(5); // Back Face Tri 2
+	index_list.push_back(4); index_list.push_back(0); index_list.push_back(3); // Left Face Tri 1
+	index_list.push_back(3); index_list.push_back(7); index_list.push_back(4); // Left Face Tri 2
+	index_list.push_back(0); index_list.push_back(4); index_list.push_back(5); // Top Face Tri 1
+	index_list.push_back(5); index_list.push_back(1); index_list.push_back(0); // Top Face Tri 2
+	index_list.push_back(3); index_list.push_back(0); index_list.push_back(1); // Front Face Tri 1
+	index_list.push_back(1); index_list.push_back(2); index_list.push_back(3); // Front Face Tri 2
+	index_list.push_back(2); index_list.push_back(3); index_list.push_back(7); // Bottom Face Tri 1
+	index_list.push_back(7); index_list.push_back(6); index_list.push_back(2); // Bottom Face Tri 2
+
+	ServiceCheckout<BufferManagerService> buffers;
+	
+	auto vb = buffers->make_buffer(GL_ARRAY_BUFFER,  (const void*) &vert_list[0], GL_FLOAT, 4, 2, GL_STATIC_DRAW);
+	auto ib = buffers->make_buffer(GL_ELEMENT_ARRAY_BUFFER, (const void*) &index_list[0], GL_UNSIGNED_SHORT, 4, 1, GL_STATIC_DRAW);
+	bufferPair_t result = make_pair(vb, ib);
+	return result;
+}
+
 void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* texture, Program *simple, bufferPair_t buffers)
 {
 	(void) renderer;
 	(void) alpha;
+	ServiceCheckout<RenderStateService> renderState;
+
 	// Clear the color and depth buffers
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
 	simple->use();
-	texture->select();
-	simple->setUniformSampler("textureMap", 0, texture);
+	// texture->select();
+	// simple->setUniformSampler("textureMap", 0, texture);
+	ColorRGBA red(1.0f, 0.0f, 0.0f, 0.0f);
+	simple->setUniform4f("vColor", &red.elements[0]);
 	auto vb = buffers.first;
 	auto ib = buffers.second;
 	vb->bindAttribute(simple, "vVertex");
@@ -86,7 +144,7 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	ib->draw();
 	ib->unbindIndices();
 	vb->unbindAttribute(simple, "vVertex");
-	texture->deselect();
+	//texture->deselect();
 	simple->unUse();
 	SDL_GL_SwapWindow(window);
 }
@@ -188,19 +246,24 @@ int main(int argc, char **argv)
 						std::shared_ptr<Texture> tex(textures->makeTexture(img.get(), true));
 						ServiceCheckout<ProgramService> programs;
 						std::shared_ptr<Program> simple(programs->loadProgram("test"));
-						SDL_assert(simple->isValid());			
-						// ortho view, 100 units deep
+						SDL_assert(simple->isValid());		
+						// initialise the geometry
+						bufferPair_t buffers(init_cube());
+						// perspective view - fairly generous 45.0f fov
 						Matrix44 projection;
-						//projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, 0.0f,  100.0f);
-						bufferPair_t buffers(init_buffers());
-
+						projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
+						Vector3d eyePos(1.0f, 3.0f, 5.0f);
+						// look at the origin
+						Matrix44 view;
+						view.lookAt(eyePos, 0.0f, 0.0, 0.0f);
 						ServiceCheckout<RenderStateService> renderState;
 						// to do - clean this up with a template make_parameter fn
-						RenderParameter projParam;
-						projParam.type = eMAT4;
-						for(Uint32 i = 0; i < 16; i++)
-							projParam.value.mat4[i] = projection.elements[i];
+						RenderParameter projParam = projection;
+						RenderParameter viewParam = view;
+						RenderParameter eye = eyePos;
 						renderState->set("projection", projParam);
+						renderState->set("view", viewParam);
+						renderState->set("eye", eye);
 						if (tex) {
 							double  t    = 0.0;
 							double  dt   = 0.01;
