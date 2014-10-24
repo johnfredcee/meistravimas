@@ -74,16 +74,17 @@ public:
 		}
 	}
 
+
 	void translation(const Vector3d& translation) {
 
 		elements[1] = elements[2] = elements[3] = elements[4] = 0.0f;
 		elements[6] = elements[7] = elements[8] = elements[9] = 0.0f;
-		elements[11] = elements[12] = 0.0f;
-		elements[0] = elements[5] = elements[10] = 1.0f;
+		elements[11] = 0.0f;
+		elements[0] = elements[5] = elements[10] = elements[15] = 1.0f;
 
-		elements[13] = translation.elements[Vector3d::X];
-		elements[14] = translation.elements[Vector3d::Y];
-		elements[15] = translation.elements[Vector3d::Z];
+		elements[12] = translation.elements[Vector3d::X];
+		elements[13] = translation.elements[Vector3d::Y];
+		elements[14] = translation.elements[Vector3d::Z];
 	}
 
 	void rotation(float angle, const Vector3d& axis) {
@@ -146,6 +147,89 @@ public:
 		elements[15] = 1.0f;
 	}
 
+	void lookAt(Vector3d& eye, Vector3d& center) {
+
+		Vector3d up(0.0f, 1.0f, 0.0f);
+
+		float  x0, x1, x2, y0, y1, y2, z0, z1, z2, len,
+			eyex = eye.elements[0],
+			eyey = eye.elements[1],
+			eyez = eye.elements[2],
+			upx = up.elements[0],
+			upy = up.elements[1],
+			upz = up.elements[2],
+			centerx = center.elements[0],
+			centery = center.elements[1],
+			centerz = center.elements[2];
+
+		if (eyex == centerx && eyey == centery && eyez == centerz) {
+			identity();
+			return;
+		}
+
+		//vec3.direction(eye, center, z);
+		z0 = eyex - centerx;
+		z1 = eyey - centery;
+		z2 = eyez - centerz;
+
+		// normalize (no check needed for 0 because of early return)
+		len = 1.0f / sqrt(z0 * z0 + z1 * z1 + z2 * z2);
+		z0 *= len;
+		z1 *= len;
+		z2 *= len;
+
+		//vec3.normalize(vec3.cross(up, z, x));
+		x0 = upy * z2 - upz * z1;
+		x1 = upz * z0 - upx * z2;
+		x2 = upx * z1 - upy * z0;
+		len = sqrtf(x0 * x0 + x1 * x1 + x2 * x2);
+		if (!len) {
+			x0 = 0;
+			x1 = 0;
+			x2 = 0;
+		} else {
+			len = 1.0f / len;
+			x0 *= len;
+			x1 *= len;
+			x2 *= len;
+		}
+
+		//vec3.normalize(vec3.cross(z, x, y));
+		y0 = z1 * x2 - z2 * x1;
+		y1 = z2 * x0 - z0 * x2;
+		y2 = z0 * x1 - z1 * x0;
+
+		len = sqrtf(y0 * y0 + y1 * y1 + y2 * y2);
+		if (!len) {
+			y0 = 0;
+			y1 = 0;
+			y2 = 0;
+		} else {
+			len = 1.0f / len;
+			y0 *= len;
+			y1 *= len;
+			y2 *= len;
+		}
+
+		elements[0] = x0;
+		elements[1] = y0;
+		elements[2] = z0;
+		elements[3] = 0;
+		elements[4] = x1;
+		elements[5] = y1;
+		elements[6] = z1;
+		elements[7] = 0;
+		elements[8] = x2;
+		elements[9] = y2;
+		elements[10] = z2;
+		elements[11] = 0;
+		elements[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+		elements[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+		elements[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+		elements[15] = 1;
+
+		return;
+	}
 
 	void lookAt(const Vector3d& at, Vector3d& direction) {
 		Vector3d k(0.0f, 1.0f, 0.0f);

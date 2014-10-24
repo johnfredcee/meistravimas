@@ -118,8 +118,8 @@ bufferPair_t init_cube()
 
 	ServiceCheckout<BufferManagerService> buffers;
 	
-	auto vb = buffers->make_buffer(GL_ARRAY_BUFFER,  (const void*) &vert_list[0], GL_FLOAT, 4, 2, GL_STATIC_DRAW);
-	auto ib = buffers->make_buffer(GL_ELEMENT_ARRAY_BUFFER, (const void*) &index_list[0], GL_UNSIGNED_SHORT, 4, 1, GL_STATIC_DRAW);
+	auto vb = buffers->make_buffer(GL_ARRAY_BUFFER,  (const void*) &vert_list[0], GL_FLOAT, vert_list.size()/3, 3, GL_STATIC_DRAW);
+	auto ib = buffers->make_buffer(GL_ELEMENT_ARRAY_BUFFER, (const void*) &index_list[0], GL_UNSIGNED_SHORT, index_list.size(), 1, GL_STATIC_DRAW);
 	bufferPair_t result = make_pair(vb, ib);
 	return result;
 }
@@ -128,20 +128,32 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 {
 	(void) renderer;
 	(void) alpha;
-	ServiceCheckout<RenderStateService> renderState;
 
+	// perspective view - fairly generous 45.0f fov
+	Matrix44 projection;
+	projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
+	projection.identity();
+	Vector3d eyePos(1.0f, 3.0f, 5.0f);
+	Vector3d eyeTarget(0.0f, 0.0f, 0.0f);
+	// look at the origin
+	Matrix44 view;
+	view.lookAt(eyePos, eyeTarget);
+	//view.identity();
 	// Clear the color and depth buffers
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	simple->use();
+	
 	// texture->select();
 	// simple->setUniformSampler("textureMap", 0, texture);
 	ColorRGBA red(1.0f, 0.0f, 0.0f, 0.0f);
 	simple->setUniform4f("vColor", &red.elements[0]);
+	simple->setUniformMat4f("mView", &view.elements[0]);
+	simple->setUniformMat4f("mProj", &projection.elements[0]);
 	auto vb = buffers.first;
 	auto ib = buffers.second;
 	vb->bindAttribute(simple, "vVertex");
 	ib->bindIndices();
-	ib->draw();
+	ib->draw(GL_LINE_LOOP);
 	ib->unbindIndices();
 	vb->unbindAttribute(simple, "vVertex");
 	//texture->deselect();
@@ -154,13 +166,13 @@ void update(double t, double dt) {
 	(void) dt;
 }
 
-
 int main(int argc, char **argv)
 {
 
 	(void) argc;
 	(void) argv;
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS | SDL_INIT_NOPARACHUTE) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
     } else {
@@ -232,6 +244,9 @@ int main(int argc, char **argv)
 				// Set the clear color for when we re-draw the scene
 				glClearColor(0.1, 0.1, 0.6, 1.0);
 
+				glViewport(0, 0, screen_width, screen_height);
+				SDL_assert(glGetError() == GL_NO_ERROR);
+
 				ServiceRegistry<ImageService>::initialise();
 				ServiceCheckout<ImageService> images;
 				std::shared_ptr<Image> img(images->loadImage("test.tga"));
@@ -245,7 +260,7 @@ int main(int argc, char **argv)
 						textures->setRenderer(renderer);
 						std::shared_ptr<Texture> tex(textures->makeTexture(img.get(), true));
 						ServiceCheckout<ProgramService> programs;
-						std::shared_ptr<Program> simple(programs->loadProgram("test"));
+						std::shared_ptr<Program> simple(programs->loadProgram("color"));
 						SDL_assert(simple->isValid());		
 						// initialise the geometry
 						bufferPair_t buffers(init_cube());
