@@ -32,9 +32,9 @@ Vector3d operator*(const Quat& lhs, const Vector3d& rhs)
 {
 
 
-    float x = rhs.elements[Vector3d::X]; 
-	float y = rhs.elements[Vector3d::Y]; 
-	float z = rhs.elements[Vector3d::Z];
+    float x = rhs.x(); 
+	float y = rhs.y(); 
+	float z = rhs.z();
     float qx = lhs.elements[Quat::X]; 
 	float qy = lhs.elements[Quat::Y]; 
 	float qz = lhs.elements[Quat::Z]; 

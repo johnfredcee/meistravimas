@@ -10,7 +10,7 @@ namespace venk
 BufferBuilder::BufferBuilder(GLenum type, GLsizei componentCount)
 {
 	mBufferSize		= 0;
-	mBuffer			= (Uint8*)malloc(1024);
+	mBuffer			= (Uint8*)SDL_malloc(1024);
 	mBufferCapacity = 1024;
 	mItemCount		= 0;
 	mType			= type;
@@ -19,7 +19,7 @@ BufferBuilder::BufferBuilder(GLenum type, GLsizei componentCount)
 
 BufferBuilder::~BufferBuilder()
 {
-	free(mBuffer);
+	SDL_free(mBuffer);
 }
 
 void BufferBuilder::growBuffer()

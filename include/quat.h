@@ -19,9 +19,9 @@ namespace venk
 
 		Quat(const Vector3d& axis, float angle)	{
 			float a = SDL_sinf(angle * 0.5f);
-			elements[Quat::X] = axis.elements[Vector3d::X] * a;
-			elements[Quat::Y] = axis.elements[Vector3d::Y] * a;
-			elements[Quat::Z] = axis.elements[Vector3d::Z] * a;
+			elements[Quat::X] = axis.x() * a;
+			elements[Quat::Y] = axis.y() * a;
+			elements[Quat::Z] = axis.z() * a;
 			elements[Quat::W] = SDL_cosf(angle * 0.5f);
 		}
 
@@ -39,7 +39,7 @@ namespace venk
 				elements[Quat::Z] * elements[Quat::Z];
 		}
 
-		void normalize(void)
+		void normalise(void)
 		{
 			float n = norm();
 			if (n >= FLT_EPSILON) {

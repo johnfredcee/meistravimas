@@ -146,8 +146,15 @@ namespace venk
 			return elements[i];
 		}
 
+		template <typename Q>	
+			inline float& U() { return elements[Q::U]; };
+
+		template <typename Q> 
+			inline float& V() { return elements[Q::V]; };
 
 	};
+
+
 
 };
 

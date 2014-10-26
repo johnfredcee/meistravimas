@@ -51,9 +51,9 @@ public:
 		elements[10] = 1.0f - (xx + yy);
 		elements[11] = 0.0f;
 
-		elements[12] = v.elements[Vector3d::X];
-		elements[13] = v.elements[Vector3d::Y];
-		elements[14] = v.elements[Vector3d::Z];
+		elements[12] = v.x();
+		elements[13] = v.y();
+		elements[14] = v.z();
 		elements[15] = 1.0f;
 
 	}
@@ -82,17 +82,17 @@ public:
 		elements[11] = 0.0f;
 		elements[0] = elements[5] = elements[10] = elements[15] = 1.0f;
 
-		elements[12] = translation.elements[Vector3d::X];
-		elements[13] = translation.elements[Vector3d::Y];
-		elements[14] = translation.elements[Vector3d::Z];
+		elements[12] = translation.x();
+		elements[13] = translation.y();
+		elements[14] = translation.z();
 	}
 
 	void rotation(float angle, const Vector3d& axis) {
 		float cosa = cosf(angle);
 		float sina = sinf(angle);
-		float x = axis.elements[Vector3d::X];
-		float y = axis.elements[Vector3d::Y];
-		float z = axis.elements[Vector3d::Z];
+		float x = axis.x();
+		float y = axis.y();
+		float z = axis.z();
 
 		elements[0] = cosa + (1.0f - cosa) * x * x;
 		elements[1] = (1.0f - cosa) * x * y + sina * z;
@@ -120,9 +120,9 @@ public:
 		elements[11] = elements[12] = elements[13] = elements[14] = 0.0f;
 		elements[15] = 1.0f;
 
-		elements[0] =  scale.elements[Vector3d::X];
-		elements[5] =  scale.elements[Vector3d::Y];
-		elements[10] = scale.elements[Vector3d::Z];
+		elements[0] =  scale.x();
+		elements[5] =  scale.y();
+		elements[10] = scale.z();
 	}
 
 	void ortho(float left, float right, float top, float bottom, float far, float near) {
@@ -257,7 +257,7 @@ public:
 	/* } */
 
 	/* void lookAt(const Vector3d& at, float x, float y, float z) { */
-	/* 	Vector3d direction(x - at.elements[Vector3d::X], y - at.elements[Vector3d::Y], z - at.elements[Vector3d::Z]); */
+	/* 	Vector3d direction(x - at.x(), y - at.y(), z - at.z()); */
 	/* 	lookAt(at, direction); */
 	/* } */
 
@@ -311,20 +311,20 @@ public:
 
         Vector3d tmp;
 
-        tmp.elements[Vector3d::X] =
-            elements[0] * vec.elements[Vector3d::X] +
-            elements[4] *  vec.elements[Vector3d::Y] +
-            elements[8] *  vec.elements[Vector3d::Z];
+        tmp.x() =
+            elements[0] * vec.x() +
+            elements[4] *  vec.y() +
+            elements[8] *  vec.z();
 
-        tmp.elements[Vector3d::Y] =
-            elements[1] * vec.elements[Vector3d::X] +
-            elements[5] * vec.elements[Vector3d::Y] +
-            elements[9] * vec.elements[Vector3d::Z];
+        tmp.y() =
+            elements[1] * vec.x() +
+            elements[5] * vec.y() +
+            elements[9] * vec.z();
 
-        tmp.elements[Vector3d::Z] =
-            elements[2] * vec.elements[Vector3d::X] +
-            elements[6]  * vec.elements[Vector3d::Y] +
-            elements[10] * vec.elements[Vector3d::Z];
+        tmp.z() =
+            elements[2] * vec.x() +
+            elements[6]  * vec.y() +
+            elements[10] * vec.z();
 
         return tmp;
     }
@@ -333,29 +333,29 @@ public:
 
         Vertex3d tmp;
 
-        tmp.elements[Vertex3d::X] =
-            elements[0] * vec.elements[Vertex3d::X] +
-            elements[4] *  vec.elements[Vertex3d::Y] +
-            elements[8] *  vec.elements[Vertex3d::Z] +
-            elements[12] * vec.elements[Vertex3d::W];
+        tmp.x() =
+            elements[0] * vec.x() +
+            elements[4] *  vec.y() +
+            elements[8] *  vec.z() +
+            elements[12] * vec.w();
 
-        tmp.elements[Vertex3d::Y] =
-            elements[1] * vec.elements[Vertex3d::X] +
-            elements[5] * vec.elements[Vertex3d::Y] +
-            elements[9]   * vec.elements[Vertex3d::Z] +
-            elements[13]  * vec.elements[Vertex3d::W];
+        tmp.y() =
+            elements[1] * vec.x() +
+            elements[5] * vec.y() +
+            elements[9]   * vec.z() +
+            elements[13]  * vec.w();
 
-        tmp.elements[Vertex3d::Z] =
-            elements[2] * vec.elements[Vertex3d::X] +
-            elements[6]  * vec.elements[Vertex3d::Y] +
-            elements[10] * vec.elements[Vertex3d::Z] +
-            elements[14] * vec.elements[Vertex3d::W];
+        tmp.z() =
+            elements[2] * vec.x() +
+            elements[6]  * vec.y() +
+            elements[10] * vec.z() +
+            elements[14] * vec.w();
 
-        tmp.elements[Vertex3d::W] =
-            elements[3] * vec.elements[Vertex3d::X] +
-            elements[7]  * vec.elements[Vertex3d::Y] +
-            elements[11] * vec.elements[Vertex3d::Z] +
-            elements[15] * vec.elements[Vertex3d::W];
+        tmp.w() =
+            elements[3] * vec.x() +
+            elements[7]  * vec.y() +
+            elements[11] * vec.z() +
+            elements[15] * vec.w();
 
         return tmp;
     }
