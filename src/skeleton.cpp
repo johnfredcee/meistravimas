@@ -10,6 +10,7 @@
 #include <SOIL.h>
 
 #include "tuple.h"
+#include "twodee.h"
 #include "threedee.h"
 #include "quat.h"
 #include "colour.h"
@@ -25,6 +26,8 @@
 #include "shader.h"
 #include "program.h"
 #include "buffer.h"
+#include "bufferbuilder.h"
+#include "torus.h"
 #include "renderstate.h"
 #include "timer.h"
 #include <res_path.h>
@@ -128,7 +131,8 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 {
 	(void) renderer;
 	(void) alpha;
-
+	(void) texture;
+	
 	// perspective view - fairly generous 45.0f fov
 	Matrix44 projection;
 	projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
@@ -152,7 +156,7 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	auto ib = buffers.second;
 	vb->bindAttribute(simple, "vVertex");
 	ib->bindIndices();
-	ib->draw(GL_LINE_LOOP);
+	ib->draw(GL_TRIANGLES);
 	ib->unbindIndices();
 	vb->unbindAttribute(simple, "vVertex");
 	//texture->deselect();
@@ -171,7 +175,7 @@ int main(int argc, char **argv)
 	(void) argc;
 	(void) argv;
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS | SDL_INIT_NOPARACHUTE) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
     } else {
@@ -262,7 +266,8 @@ int main(int argc, char **argv)
 						std::shared_ptr<Program> simple(programs->loadProgram("color"));
 						SDL_assert(simple->isValid());		
 						// initialise the geometry
-						bufferPair_t buffers(init_cube());
+                        TorusBuilder torus(1.0f, 0.25f, 16, 32);
+						bufferPair_t buffers(torus.make_vertices(), torus.make_indices());
 						// perspective view - fairly generous 45.0f fov
 						// Matrix44 projection;
 						// projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);

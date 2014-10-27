@@ -35,7 +35,7 @@ public:
 
 };
 
-float dot(const Vector2d& a, const Vector2d& b)  {
+inline float dot(const Vector2d& a, const Vector2d& b)  {
 	return a.x() * b.x() +
 		a.y() * b.y(); }
 

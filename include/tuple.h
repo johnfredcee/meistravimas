@@ -74,7 +74,7 @@ namespace venk
 		static const eScalarType element_type = DOUBLE;
 	};
 
-
+	
 	/**
 	 * POD tuple type with N elements of type T which can be used as a
 	 * basis for vectors, etc. Pretty much obsolete as now in C++11

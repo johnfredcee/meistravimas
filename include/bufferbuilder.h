@@ -3,7 +3,8 @@
 
 namespace venk
 {
-
+	class Buffer;
+	
 /**
  * Class used to build a binary buffer from a sequence of scalar tuples,
  * OpenGL retained-mode style.
@@ -28,7 +29,9 @@ public:
 	/* add values to the buffer */
 	void addVec1f(GLfloat x);
 	void addVec2f(GLfloat x, GLfloat y);
+	void addVec2f(const Vector2d& v);
 	void addVec3f(GLfloat x, GLfloat y, GLfloat z);
+	void addVec3f(const Vector3d& v);
 	void addVec4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 	void addVec1ui(GLushort i);
 	void addVec2ui(GLushort i, GLushort j);
@@ -37,6 +40,9 @@ public:
 	const void *getData();
 	/* return the number of items in the buffer */
 	GLsizei itemCount();
+	/* return the type of the buffer (type and component count) */
+	void getTypeInfo(GLenum& type, GLsizei& component_count);
+	std::shared_ptr<Buffer> make_buffer(GLenum target, GLenum = GL_STATIC_DRAW);
 private:
 	void growBuffer();
 	
