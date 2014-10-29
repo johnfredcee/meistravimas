@@ -1,9 +1,11 @@
 
 #include <GL/glew.h>
 #include <SDL.h>
+#include <SDL_rwops.h>
 #include <SDL_opengl.h>
 #include <SDL_assert.h>
 #include "utils.h"
+
 
 GLsizei getTypeSize(GLenum type)  {
 

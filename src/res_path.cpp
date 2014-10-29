@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <SDL.h>
+#include <SDL_opengl.h>
 #include <res_path.h>
 
 namespace venk
@@ -41,6 +42,32 @@ std::string getResourcePath(const std::string &subDir) {
 	//If we want a specific subdirectory path in the resource directory
 	//append it to the base path. 
 	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
+}
+
+char *file_contents(const std::string& fileName, Sint32 *length)
+{
+	std::string fullFileName = getResourcePath();
+	fullFileName = fullFileName + fileName;
+	SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
+	if (rwops != nullptr) {
+		Sint64 size = SDL_RWsize(rwops);
+		if (size != -1L) {
+			void* buf = SDL_malloc(size+1);
+			size_t read = SDL_RWread(rwops, buf, 1, size);
+			if (read == size) {
+				*(((char*)buf) + size) = '\0';
+				*length = static_cast<Sint32>(size);
+				return (char*) buf;
+			} else {
+				std::cerr << "Failed to read " << fullFileName << std::endl;
+			}
+		} else {
+			std::cerr << "Failed to read " << fullFileName << std::endl;
+		}
+	} else {
+		std::cerr << "Failed to open " << fullFileName << std::endl;
+	}
+	return (GLchar*) nullptr;
 }
 
 }

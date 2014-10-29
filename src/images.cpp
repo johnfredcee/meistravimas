@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <memory>
 #include <SDL.h>
 #include <images.h>
@@ -17,9 +18,7 @@ namespace venk
 			}
 		};
 		std::shared_ptr<Image> img(new Image, image_deleter);
-		std::string fullFileName = getResourcePath();
-		fullFileName = fullFileName + fileName;
-		SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
+		SDL_RWops *rwops = SDL_RWFromFile(fileName.c_str(), "rb");
 		if (rwops != nullptr) {
 			Sint64 size = SDL_RWsize(rwops);
 			if (size != -1L) {

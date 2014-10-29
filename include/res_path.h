@@ -1,9 +1,6 @@
 #ifndef RES_PATH_H
 #define RES_PATH_H
 
-#include <iostream>
-#include <string>
-#include <SDL.h>
 
 namespace venk
 {
@@ -13,12 +10,11 @@ namespace venk
  * bin/
  *  the executable
  * res/
- *  Lesson1/
- *  Lesson2/
  *
- * Paths returned will be Lessons/res/subDir
  */
 std::string getResourcePath(const std::string &subDir = "");
+char *file_contents(const std::string& fileName, Sint32 *length);
+
 }
 
 #endif

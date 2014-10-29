@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-extern GLsizei getTypeSize(GLenum type);
-extern char *getTypeDescription(GLenum type);
+	extern GLsizei getTypeSize(GLenum type);
+	extern char *getTypeDescription(GLenum type);
 
 #if defined(__cplusplus)
 };

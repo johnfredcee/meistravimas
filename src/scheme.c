@@ -22,6 +22,7 @@
 #define USE_PLIST 1
 #define STANDALONE 0
 //#define USE_SCHEME_STACK 0
+#define SHOW_ERROR_LINE 0
 
 #define _SCHEME_SOURCE
 #include "scheme-private.h"

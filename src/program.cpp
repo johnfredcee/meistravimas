@@ -67,6 +67,8 @@ std::shared_ptr<Program> ProgramService::loadProgram(const std::string& name)
 
 	vshaderName += std::string("-v.glsl");
 	fshaderName += std::string("-f.glsl");
+	vshaderName = std::string("shaders/") + vshaderName;
+	fshaderName = std::string("shaders/") + fshaderName;
 	info.vShader = std::make_shared<Shader>(GL_VERTEX_SHADER,  vshaderName.c_str());
 	SDL_assert(info.vShader);
 	info.fShader = std::make_shared<Shader>(GL_FRAGMENT_SHADER, fshaderName.c_str());

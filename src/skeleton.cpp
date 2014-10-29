@@ -9,6 +9,7 @@
 #include <SDL_rwops.h>
 #include <SOIL.h>
 #include <physfs.h>
+#include <scheme-private.h>
 
 #include "tuple.h"
 #include "twodee.h"
@@ -175,11 +176,17 @@ int main(int argc, char **argv)
 
 	(void) argc;
 	(void) argv;
+	scheme tinyscm;
 
     int physfsok = PHYSFS_init(argv[0]);
     if (!physfsok) {
       std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;    
     }
+	int scheme_ok =  scheme_init_custom_alloc(&tinyscm, SDL_malloc, SDL_free);
+	if (!scheme_ok) {
+		std::cerr << "Tiny scheme init failed" << std::endl;
+	}
+		
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
@@ -201,7 +208,7 @@ int main(int argc, char **argv)
           std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;    
         }
         std::cout << "Dir listing.." << std::endl;
-        char** flist = PHYSFS_enumerateFiles("res");
+        char** flist = PHYSFS_enumerateFiles("images");
         for(char** i = flist; *i != nullptr; i++)
           std::cout << *i << std::endl;
         std::cout << "=============" << std::endl;
@@ -269,7 +276,7 @@ int main(int argc, char **argv)
 
 				ServiceRegistry<ImageService>::initialise();
 				ServiceCheckout<ImageService> images;
-				std::shared_ptr<Image> img(images->loadImage("test.tga"));
+				std::shared_ptr<Image> img(images->loadImage("images/test.tga"));
 				if (img) {
 					ServiceRegistry<TextureService>::initialise();
 					ServiceRegistry<ProgramService>::initialise();
@@ -348,6 +355,7 @@ int main(int argc, char **argv)
 			ServiceRegistry<ImageService>::shutdown();
 		}
     }
+	scheme_deinit(&tinyscm);
     int phsyfhshutdown = PHYSFS_deinit();
     if (!phsyfhshutdown) { 
       std::cerr << "Physfs shutdown failed:" << PHYSFS_getLastError() << std::endl;

@@ -1,4 +1,6 @@
 
+#include <string>
+#include <iostream>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,35 +8,11 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <res_path.h>
+#include "utils.h"
 #include "shader.h"
 
 using namespace venk;
 
-char *file_contents(const char *fileName, Sint32 *length)
-{
-	std::string fullFileName = getResourcePath();
-	fullFileName = fullFileName + fileName;
-	SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
-	if (rwops != nullptr) {
-		Sint64 size = SDL_RWsize(rwops);
-		if (size != -1L) {
-			void* buf = SDL_malloc(size+1);
-			size_t read = SDL_RWread(rwops, buf, 1, size);
-			if (read == size) {
-				*(((char*)buf) + size) = '\0';
-				*length = static_cast<Sint32>(size);
-				return (char*) buf;
-			} else {
-				std::cerr << "Failed to read " << fullFileName << std::endl;
-			}
-		} else {
-			std::cerr << "Failed to read " << fullFileName << std::endl;
-		}
-	} else {
-		std::cerr << "Failed to open " << fullFileName << std::endl;
-	}
-	return (GLchar*) nullptr;
-}
 
 Shader::Shader(GLenum type, const std::string& filename) :  shaderOk(false), shader(0)
 {
@@ -45,7 +23,7 @@ Shader::Shader(GLenum type, const std::string& filename) :  shaderOk(false), sha
 
 	Sint32 length = 0;
 	char* source = file_contents(filename.c_str(), &length);
-
+	SDL_assert_always((source != nullptr) && (length > 0));
 	if ((!source) || (length == 0)) {
 		std::cerr << "Could not load " << filename << std::endl;
 		return;
