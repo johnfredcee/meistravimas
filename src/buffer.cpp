@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include <memory>
-#include <glew.h>
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include "utils.h"

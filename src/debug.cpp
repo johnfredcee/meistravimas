@@ -1,5 +1,5 @@
 #include <iostream>
-#include <glew.h>
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 

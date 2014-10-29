@@ -1,9 +1,3 @@
-
-
-#include <glew.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +6,12 @@
 #include <unordered_map>
 #include <iostream>
 #include <memory>
+
+
+#include <GL/glew.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
+
 #include "hashstring.h"
 #include "locator.h"
 #include "servicecounter.h"

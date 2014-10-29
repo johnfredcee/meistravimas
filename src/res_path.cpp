@@ -9,14 +9,6 @@ namespace venk
 	
 /*
  * Get the resource path for resources located in res/subDir
- * It's assumed the project directory is structured like:
- * bin/
- *  the executable
- * res/
- *  Lesson1/
- *  Lesson2/
- *
- * Paths returned will be Lessons/res/subDir
  */
 std::string getResourcePath(const std::string &subDir) {
 	//We need to choose the path separator properly based on which
@@ -27,7 +19,7 @@ std::string getResourcePath(const std::string &subDir) {
 #else
 	const char PATH_SEP = '/';
 #endif
-	//This will hold the base resource path: Lessons/res/
+	//This will hold the base resource path.
 	//We give it static lifetime so that we'll only need to call
 	//SDL_GetBasePath once to get the executable path
 	static std::string baseRes;
@@ -47,7 +39,7 @@ std::string getResourcePath(const std::string &subDir) {
 		baseRes = baseRes.substr(0, pos) + "res" + PATH_SEP;
 	}
 	//If we want a specific subdirectory path in the resource directory
-	//append it to the base path. This would be something like Lessons/res/Lesson0
+	//append it to the base path. 
 	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
 }
 

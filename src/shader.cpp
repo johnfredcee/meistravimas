@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glew.h>
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <res_path.h>

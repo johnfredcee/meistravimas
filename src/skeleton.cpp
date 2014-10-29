@@ -4,10 +4,11 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <glew.h>
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_rwops.h>
 #include <SOIL.h>
+#include <physfs.h>
 
 #include "tuple.h"
 #include "twodee.h"
@@ -175,6 +176,10 @@ int main(int argc, char **argv)
 	(void) argc;
 	(void) argv;
 
+    int physfsok = PHYSFS_init(argv[0]);
+    if (!physfsok) {
+      std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;    
+    }
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
@@ -186,9 +191,21 @@ int main(int argc, char **argv)
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE ); 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-		
+		int physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
+        if (!physfsok) {
+          std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;    
+        }
 		std::cout << "Resource path is: " << getResourcePath() << std::endl;
-
+        physfsok = PHYSFS_addToSearchPath(getResourcePath().c_str(), 1);
+        if (!physfsok) {
+          std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;    
+        }
+        std::cout << "Dir listing.." << std::endl;
+        char** flist = PHYSFS_enumerateFiles("res");
+        for(char** i = flist; *i != nullptr; i++)
+          std::cout << *i << std::endl;
+        std::cout << "=============" << std::endl;
+        PHYSFS_freeList(flist);
 		auto window_deleter = [] (SDL_Window *w) {
 			if (w) SDL_DestroyWindow(w);
 		};
@@ -330,6 +347,10 @@ int main(int argc, char **argv)
 			}
 			ServiceRegistry<ImageService>::shutdown();
 		}
+    }
+    int phsyfhshutdown = PHYSFS_deinit();
+    if (!phsyfhshutdown) { 
+      std::cerr << "Physfs shutdown failed:" << PHYSFS_getLastError() << std::endl;
     }
     SDL_Quit();
     return 0;

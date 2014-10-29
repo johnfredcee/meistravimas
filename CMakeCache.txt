@@ -21,10 +21,7 @@ CMAKE_AR:FILEPATH=/usr/bin/ar
 // CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.
 CMAKE_BUILD_TYPE:STRING=Debug
 
-//Enable/Disable color output during build.
-CMAKE_COLOR_MAKEFILE:BOOL=OFF
-
-//CXX compiler.
+//CXX compiler
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 
 //Flags used by the compiler during all build types.
@@ -43,7 +40,7 @@ CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 //Flags used by the compiler during release builds with debug info.
 CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
-//C compiler.
+//C compiler
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 
 //Flags used by the compiler during all build types.
@@ -86,8 +83,8 @@ CMAKE_INSTALL_PREFIX:PATH=/usr/local
 //Path to a program.
 CMAKE_LINKER:FILEPATH=/usr/bin/ld
 
-//Path to a program.
-CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make
+//Program used to build from build.ninja files.
+CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/ninja
 
 //Flags used by the linker during the creation of modules.
 CMAKE_MODULE_LINKER_FLAGS:STRING=' '
@@ -166,10 +163,10 @@ CMAKE_USE_RELATIVE_PATHS:BOOL=OFF
 // .SILENT directive, and all commands will be echoed to the console
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
-CMAKE_VERBOSE_MAKEFILE:BOOL=ON
+CMAKE_VERBOSE_MAKEFILE:BOOL=OFF
 
 //Path to a file.
-GLEW_INCLUDE_DIR:PATH=/usr/include/GL
+GLEW_INCLUDE_DIR:PATH=/usr/include
 
 //Path to a library.
 GLEW_LIBRARY:FILEPATH=/usr/lib/i386-linux-gnu/libGLEW.so
@@ -185,6 +182,15 @@ OpenGL_glu_LIBRARY:FILEPATH=/usr/lib/i386-linux-gnu/libGLU.so
 
 //Path to a file.
 OpenGL_xmesa_INCLUDE_DIR:PATH=OpenGL_xmesa_INCLUDE_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for PHYSFS.
+PHYSFS_DIR:PATH=PHYSFS_DIR-NOTFOUND
+
+//Path to a file.
+PHYSFS_INCLUDE_DIR:PATH=/usr/include
+
+//Path to a library.
+PHYSFS_LIBRARY:FILEPATH=/usr/lib/i386-linux-gnu/libphysfs.so
 
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
@@ -408,8 +414,6 @@ CMAKE_CACHE_MAJOR_VERSION:INTERNAL=3
 CMAKE_CACHE_MINOR_VERSION:INTERNAL=0
 //Patch version of cmake used to create the current loaded cache
 CMAKE_CACHE_PATCH_VERSION:INTERNAL=2
-//ADVANCED property for variable: CMAKE_COLOR_MAKEFILE
-CMAKE_COLOR_MAKEFILE-ADVANCED:INTERNAL=1
 //Path to CMake executable.
 CMAKE_COMMAND:INTERNAL=/usr/bin/cmake
 //Path to cpack program executable.
@@ -440,8 +444,6 @@ CMAKE_C_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1
 CMAKE_C_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_C_FLAGS_RELWITHDEBINFO
 CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
-//Path to cache edit program executable.
-CMAKE_EDIT_COMMAND:INTERNAL=/usr/bin/cmake-gui
 //Executable file format
 CMAKE_EXECUTABLE_FORMAT:INTERNAL=ELF
 //ADVANCED property for variable: CMAKE_EXE_LINKER_FLAGS
@@ -457,7 +459,7 @@ CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_EXPORT_COMPILE_COMMANDS
 CMAKE_EXPORT_COMPILE_COMMANDS-ADVANCED:INTERNAL=1
 //Name of generator.
-CMAKE_GENERATOR:INTERNAL=Unix Makefiles
+CMAKE_GENERATOR:INTERNAL=Ninja
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Have function connect
@@ -537,7 +539,9 @@ CMAKE_USE_RELATIVE_PATHS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding GLEW
-FIND_PACKAGE_MESSAGE_DETAILS_GLEW:INTERNAL=[/usr/include/GL][/usr/lib/i386-linux-gnu/libGLEW.so][v()]
+FIND_PACKAGE_MESSAGE_DETAILS_GLEW:INTERNAL=[/usr/include][/usr/lib/i386-linux-gnu/libGLEW.so][v()]
+//Details about finding PhysFS
+FIND_PACKAGE_MESSAGE_DETAILS_PhysFS:INTERNAL=[/usr/lib/i386-linux-gnu/libphysfs.so][/usr/include][v()]
 //Details about finding SDL2
 FIND_PACKAGE_MESSAGE_DETAILS_SDL2:INTERNAL=[/usr/include/SDL2][/usr/lib/i386-linux-gnu/libSDL2.so][v2.0.2()]
 //Details about finding SOIL

@@ -1,9 +1,10 @@
 
-#include <glew.h>
+
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include "hashstring.h"
