@@ -159,6 +159,7 @@
     _OP_DEF(opexe_4, "open-input-file",                1,  1,       TST_STRING,                      OP_OPEN_INFILE      )
     _OP_DEF(opexe_4, "open-output-file",               1,  1,       TST_STRING,                      OP_OPEN_OUTFILE     )
     _OP_DEF(opexe_4, "open-input-output-file",         1,  1,       TST_STRING,                      OP_OPEN_INOUTFILE   )
+	_OP_DEF(opexe_4, "open-net-socket",                1,  1,       TST_NATURAL,                     OP_OPEN_NETSOCKET   )
 #if USE_STRING_PORTS
     _OP_DEF(opexe_4, "open-input-string",              1,  1,       TST_STRING,                      OP_OPEN_INSTRING    )
     _OP_DEF(opexe_4, "open-input-output-string",       1,  1,       TST_STRING,                      OP_OPEN_INOUTSTRING )

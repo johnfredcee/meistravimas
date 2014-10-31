@@ -13,17 +13,26 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99")
 endif()
 
+
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+list(APPEND LIBS ${SDL2_LIBRARIES})
+
+find_package(SDL2_net REQUIRED)
+include_directories(${SDL2_NET_INCLUDE_DIRS})
+list(APPEND LIBS ${SDL2_NET_LIBRARIES})
+
+find_package(PhysFS REQUIRED)
+include_directories(${PHYSFS_INCLUDE_DIRS})
+list(APPEND LIBS ${PHYSFS_LIBRARY})
+
 # Find all the libs that don't require extra parameters
-foreach(lib SDL2 SOIL OpenGL GLEW)
+foreach(lib SOIL OpenGL GLEW)
 	find_package(${lib} REQUIRED)
 	include_directories(${${lib}_INCLUDE_DIRS})
 	list(APPEND LIBS ${${lib}_LIBRARIES})
 	add_definitions(${${lib}_DEFINITIONS})
 endforeach(lib)
-
-find_package(PhysFS REQUIRED)
-include_directories(${PHYSFS_INCLUDE_DIRS})
-list(APPEND LIBS ${PHYSFS_LIBRARY})
 
 
 file(GLOB Includes include/*.h)
