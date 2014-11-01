@@ -4,7 +4,7 @@
 namespace venk
 {
 	void load_scheme(scheme* sc, const std::string& fname);
-	int server();
+	int server(scheme *sc);
 
 }
 

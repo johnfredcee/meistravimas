@@ -4558,6 +4558,12 @@ void scheme_set_output_port_string(scheme *sc, char *start, char *past_the_end) 
 	sc->outport=port_from_string(sc,start,past_the_end,port_output);
 }
 
+void scheme_set_port_net(scheme *sc, TCPsocket skt)
+{
+	 sc->inport  = port_from_tcp(sc, skt);
+	 sc->outport = sc->inport; 
+}
+
 void scheme_set_external_data(scheme *sc, void *p) {
 	sc->ext_data=p;
 }

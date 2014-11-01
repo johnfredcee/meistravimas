@@ -196,7 +196,8 @@ int main(int argc, char **argv) {
 	if(!scheme_ok) {
 		std::cerr << "Tiny scheme init failed" << std::endl;
 	}
-	int server_ok = server();
+	load_scheme(&tinyscm, "init");
+	int server_ok = server(&tinyscm);
 	if (!server_ok) {
 		std::cerr << "Server failed to start " << std::endl;
 	}
@@ -204,7 +205,6 @@ int main(int argc, char **argv) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
 	} else {
-		load_scheme(&tinyscm, "init");
 		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);

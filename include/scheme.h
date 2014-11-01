@@ -137,6 +137,7 @@ void scheme_set_input_port_file(scheme *sc, FILE *fin);
 void scheme_set_input_port_string(scheme *sc, char *start, char *past_the_end);
 SCHEME_EXPORT void scheme_set_output_port_file(scheme *sc, FILE *fin);
 void scheme_set_output_port_string(scheme *sc, char *start, char *past_the_end);
+ void scheme_set_port_net(scheme *sc, TCPsocket skt);
 SCHEME_EXPORT void scheme_load_file(scheme *sc, FILE *fin);
 SCHEME_EXPORT void scheme_load_named_file(scheme *sc, FILE *fin, const char *filename);
 SCHEME_EXPORT void scheme_load_string(scheme *sc, const char *cmd);
