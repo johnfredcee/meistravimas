@@ -1457,23 +1457,24 @@ static pointer port_from_scratch(scheme *sc) {
 }
 
 static void port_close(scheme *sc, pointer p, int flag) {
-	port *pt=p->_object._port;
-	pt->kind&=~flag;
-	if((pt->kind & (port_input|port_output))==0) {
-		if(pt->kind&port_file) {
+	 (void) sc;
+	 port *pt=p->_object._port;
+	 pt->kind&=~flag;
+	 if((pt->kind & (port_input|port_output))==0) {
+		  if(pt->kind&port_file) {
 #if SHOW_ERROR_LINE
-			/* Cleanup is here so (close-*-port) functions could work too */
-			pt->rep.stdio.curr_line = 0;
-			if(pt->rep.stdio.filename)
-				sc->free(pt->rep.stdio.filename);
+			   /* Cleanup is here so (close-*-port) functions could work too */
+			   pt->rep.stdio.curr_line = 0;
+			   if(pt->rep.stdio.filename)
+					sc->free(pt->rep.stdio.filename);
 #endif
-			fclose(pt->rep.stdio.file);
-		}
-		if (pt->kind&port_net) {
-			 SDLNet_TCP_Close(pt->rep.net.skt);
-		}
-		pt->kind=port_free;
-	}
+			   fclose(pt->rep.stdio.file);
+		  }
+		  if (pt->kind&port_net) {
+			   SDLNet_TCP_Close(pt->rep.net.skt);
+		  }
+		  pt->kind=port_free;
+	 }
 }
 
 /* get new character from input file */
@@ -1501,7 +1502,11 @@ static int basic_inchar(port *pt) {
 	if (pt->kind & port_net) {
 		 if (pt->rep.net.start == pt->rep.net.end)
 		 {
-			  SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
+			  int result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
+			  if (result <= 0) {
+				   pt->kind |= port_saw_EOF;
+				   return EOF;
+			  }
 			  pt->rep.net.end++;
 			  if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
 				   pt->rep.net.end = pt->rep.net.buffer;
@@ -4650,6 +4655,33 @@ void scheme_load_string(scheme *sc, const char *cmd) {
 	sc->loadport=mk_port(sc,sc->load_stack);
 	sc->retcode=0;
 	sc->interactive_repl=0;
+	sc->inport=sc->loadport;
+	sc->args = mk_integer(sc,sc->file_i);
+	Eval_Cycle(sc, OP_T0LVL);
+	typeflag(sc->loadport)=T_ATOM;
+	if(sc->retcode==0) {
+		sc->retcode=sc->nesting!=0;
+	}
+}
+
+void scheme_load_socket(scheme *sc, TCPsocket skt) {
+	dump_stack_reset(sc);
+	sc->envir = sc->global_env;
+	sc->file_i=0;
+	sc->load_stack[0].kind=port_input|port_output|port_net;
+	sc->load_stack[0].rep.net.skt=skt;
+	sc->load_stack[0].rep.net.start=sc->load_stack[0].rep.net.buffer;
+	sc->load_stack[0].rep.net.end=sc->load_stack[0].rep.net.buffer;
+	sc->loadport=mk_port(sc,sc->load_stack);
+	sc->retcode=0;
+	sc->interactive_repl=1;   
+/* #if SHOW_ERROR_LINE */
+/* 	sc->load_stack[0].rep.stdio.curr_line = 0; */
+/* 	if(fin!=stdin && filename) */
+/* 		sc->load_stack[0].rep.stdio.filename = store_string(sc, strlen(filename), filename, 0); */
+/* 	else */
+/* 		sc->load_stack[0].rep.stdio.filename = NULL; */
+/* #endif */
 	sc->inport=sc->loadport;
 	sc->args = mk_integer(sc,sc->file_i);
 	Eval_Cycle(sc, OP_T0LVL);
