@@ -43,6 +43,7 @@ extern "C" {
 # define USE_COLON_HOOK 0
 # define USE_DL 0
 # define USE_PLIST 0
+# define USE_OPAQUE_TYPE 0
 #endif
 
 /*
@@ -112,6 +113,11 @@ extern "C" {
 #ifndef SHOW_ERROR_LINE   /* Show error line in file */
 # define SHOW_ERROR_LINE 1
 #endif
+
+#ifndef USE_OPAQUE_TYPE  /* Enable opaque type with option to handle user custom pointers */
+# define USE_OPAQUE_TYPE 1
+#endif
+
 
 typedef struct scheme scheme;
 typedef struct cell *pointer;
@@ -227,6 +233,13 @@ struct scheme_interface {
   void (*setimmutable)(pointer p);
   void (*load_file)(scheme *sc, FILE *fin);
   void (*load_string)(scheme *sc, const char *input);
+
+#if USE_OPAQUE_TYPE	 
+  int (*is_opaque)(pointer p);
+  pointer (*mk_opaque)(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*));
+  void *(*opaquevalue)(pointer p);
+  const char *(*opaquetag)(pointer p);
+#endif
 };
 #endif
 

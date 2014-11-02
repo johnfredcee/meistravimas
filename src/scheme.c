@@ -141,7 +141,13 @@ enum scheme_types {
 	T_MACRO=12,
 	T_PROMISE=13,
 	T_ENVIRONMENT=14,
-	T_LAST_SYSTEM_TYPE=14
+#if USE_OPAQUE_TYPE
+    T_OPAQUE=15,
+    T_LAST_SYSTEM_TYPE=15
+#else
+   T_LAST_SYSTEM_TYPE=14
+#endif
+
 };
 
 /* ADJ is enough slack to align cells in a TYPE_BITS-bit boundary */
@@ -268,6 +274,14 @@ INTERFACE INLINE int is_environment(pointer p) { return (type(p)==T_ENVIRONMENT)
 INTERFACE INLINE int is_immutable(pointer p) { return (typeflag(p)&T_IMMUTABLE); }
 /*#define setimmutable(p)  typeflag(p) |= T_IMMUTABLE*/
 INTERFACE INLINE void setimmutable(pointer p) { typeflag(p) |= T_IMMUTABLE; }
+
+#if USE_OPAQUE_TYPE 
+ INTERFACE INLINE int is_opaque(pointer p)    { return (type(p)==T_OPAQUE); }
+ INTERFACE void       *opaquevalue(pointer p) { return (p)->_object._opaque._pvalue; }
+ INTERFACE const char *opaquetag(pointer p)   { return (p)->_object._opaque._tag; }
+ INTERFACE static pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*));
+#endif
+
 
 #define caar(p)          car(car(p))
 #define cadr(p)          car(cdr(p))
@@ -1287,6 +1301,13 @@ static void finalize_cell(scheme *sc, pointer a) {
 		}
 		sc->free(a->_object._port);
 	}
+#if USE_OPAQUE_TYPE  
+  else if(is_opaque(a)) {
+    if(a->_object._opaque._free_func) {
+      a->_object._opaque._free_func(a->_object._opaque._pvalue);
+	}
+  }
+#endif
 }
 
 /* ========== Routines for Reading ========== */
@@ -2021,6 +2042,11 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
 		snprintf(p,STRBUFFSIZE,"#<FOREIGN PROCEDURE %ld>", procnum(l));
 	} else if(is_continuation(l)) {
 		p = "#<CONTINUATION>";
+#if USE_OPAQUE_TYPE
+	 } else if (is_opaque(l)) {
+		  p = sc->strbuff;
+		  snprintf(p,STRBUFFSIZE,"#<%s>", opaquetag(l) ? opaquetag(l) : "OPAQUE");
+#endif
 	} else {
 		p = "#<ERROR>";
 	}
@@ -2045,6 +2071,18 @@ static pointer mk_continuation(scheme *sc, pointer d) {
 	cont_dump(x) = d;
 	return (x);
 }
+
+ 
+INTERFACE static pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*)) {
+	pointer x = get_cell(sc, sc->NIL, sc->NIL);
+	typeflag(x) = (T_OPAQUE | T_ATOM);
+
+	(x)->_object._opaque._pvalue = ptr;
+	(x)->_object._opaque._tag = tag;
+	(x)->_object._opaque._free_func = free_func;
+	return (x);
+}
+
 
 static pointer list_star(scheme *sc, pointer d) {
 	pointer p, q;
@@ -4427,6 +4465,14 @@ static struct scheme_interface vtbl = {
 
 	scheme_load_file,
 	scheme_load_string
+#if USE_OPAQUE_TYPE
+  /* starting comma is for previous line */
+  , is_opaque,
+  mk_opaque,
+  opaquevalue,
+  opaquetag
+#endif
+
 };
 #endif
 

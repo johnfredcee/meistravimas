@@ -65,6 +65,13 @@ struct cell {
 			struct cell *_car;
 			struct cell *_cdr;
 		} _cons;
+#if USE_OPAQUE_TYPE
+    struct {
+      const char *_tag;
+      void       *_pvalue;
+      void      (*_free_func)(void*);
+    }_opaque;
+#endif 
 	} _object;
 };
 
