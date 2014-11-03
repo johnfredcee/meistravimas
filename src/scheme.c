@@ -1591,8 +1591,9 @@ INTERFACE void putstr(scheme *sc, const char *s) {
 		fputs(s,pt->rep.stdio.file);
 	} else {
 		 if (pt->kind&port_net) {
-			  for(; *s; s++)
+			  for(; *s; s++) {
 				   SDLNet_TCP_Send(pt->rep.net.skt, (const void*) s, 1);
+			  }
 		 } 	else {
 			  for(; *s; s++) {
 				   if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
