@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <SDL_rwops.h>
 #include <SDL_net.h>
+#include <SDL_thread.h>
 #include <scheme-private.h>
 #include "res_path.h"
 
@@ -24,14 +25,11 @@ void load_scheme(scheme* sc, const std::string& fname) {
 }
 
 
-int server(scheme *sc) {
+int server(void *data) {
 
+	scheme *sc = (scheme *) data;
 	TCPsocket sd, csd; /* Socket descriptor, Client socket descriptor */
 	IPaddress ip, *remoteIP;
-	if(SDLNet_Init() < 0) {
-		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
-		return -1;
-	}
 	/* Resolving the host using NULL make network interface to listen */
 	if(SDLNet_ResolveHost(&ip, nullptr, 2956) < 0) {
 		std::cerr << "SDLNet_ResolveHost: " << SDLNet_GetError() << std::endl;
@@ -42,34 +40,38 @@ int server(scheme *sc) {
 		std::cerr << "SDLNet_TCP_Open:" << SDLNet_GetError() << std::endl;
 		return -1;
 	}
-	while (1)
-	{
-		/* This check the sd if there is a pending connection.
-		 * If there is one, accept that, and open a new socket for communicating */
-		while((csd = SDLNet_TCP_Accept(sd)) == nullptr) {
-			SDL_Delay(1);
-		}
-		/* Now we can communicate with the client using csd socket
-		 * sd will remain opened waiting other connections */
-		/* Get the remote address */
-		if((remoteIP = SDLNet_TCP_GetPeerAddress(csd))) {
-			/* Print the address, converting in the host format */
-			std::cout << "Host connected: " << std::hex << SDLNet_Read32(&remoteIP->host) << ":" << std::dec <<  SDLNet_Read16(&remoteIP->port) << std::endl;
-		} else {
-			std::cerr << "SDLNet_TCP_GetPeerAddress: " << SDLNet_GetError() << std::endl;
-		}
-		scheme_set_port_net(sc, csd);
-		scheme_load_string(sc, "(write \"SDL Scheme\") (newline)"); 
-		scheme_load_socket(sc, csd);
-		std::cout << "Terminate connection" << std::endl;
-		/* Close the client socket */
-		SDLNet_TCP_Close(csd);
-		csd = nullptr;
+
+	/* This check the sd if there is a pending connection.
+	 * If there is one, accept that, and open a new socket for communicating */
+	while((csd = SDLNet_TCP_Accept(sd)) == nullptr) {
+		SDL_Delay(1);
 	}
+	/* Now we can communicate with the client using csd socket
+	 * sd will remain opened waiting other connections */
+	/* Get the remote address */
+	if((remoteIP = SDLNet_TCP_GetPeerAddress(csd))) {
+		/* Print the address, converting in the host format */
+		std::cout << "Host connected: " << std::hex << SDLNet_Read32(&remoteIP->host) << ":" << std::dec <<  SDLNet_Read16(&remoteIP->port) << std::endl;
+	} else {
+		std::cerr << "SDLNet_TCP_GetPeerAddress: " << SDLNet_GetError() << std::endl;
+	}
+	scheme_set_port_net(sc, csd);
+	scheme_load_string(sc, "(write \"SDL Scheme\") (newline)"); 
+	scheme_load_socket(sc, csd);
+	std::cout << "Terminate connection" << std::endl;
+	/* Close the client socket */
+	SDLNet_TCP_Close(csd);
+	csd = nullptr;
+
 	/* Close the server socket */
 	SDLNet_TCP_Close(sd);
-	SDLNet_Quit();
 	return 0;
+}
+
+SDL_Thread* launch_server(scheme* sc)
+{
+	SDL_Thread* threadID = SDL_CreateThread( server, "SchemePort", (void*) sc );
+	return threadID;
 }
 
 }

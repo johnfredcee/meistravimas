@@ -8,6 +8,7 @@
 #include <SDL.h>
 #include <SDL_rwops.h>
 #include <SDL_net.h>
+#include <SDL_thread.h>
 #include <SOIL.h>
 #include <physfs.h>
 #include <scheme-private.h>
@@ -197,8 +198,12 @@ int main(int argc, char **argv) {
 		std::cerr << "Tiny scheme init failed" << std::endl;
 	}
 	load_scheme(&tinyscm, "init");
-	int server_ok = server(&tinyscm);
-	if (!server_ok) {
+	if(SDLNet_Init() < 0) {
+		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
+		return -1;
+	}
+	SDL_Thread *server_thread = launch_server(&tinyscm);
+	if (server_thread == nullptr) {
 		std::cerr << "Server failed to start " << std::endl;
 	}
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
@@ -357,7 +362,10 @@ int main(int argc, char **argv) {
 			ServiceRegistry<ImageService>::shutdown();
 		}
 	}
+	int server_exit;
+	SDL_WaitThread(server_thread, &server_exit);
 	scheme_deinit(&tinyscm);
+	SDLNet_Quit();
 	int phsyfhshutdown = PHYSFS_deinit();
 	if(!phsyfhshutdown) {
 		std::cerr << "Physfs shutdown failed:" << PHYSFS_getLastError() << std::endl;
