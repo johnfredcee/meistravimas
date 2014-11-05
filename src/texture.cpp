@@ -7,6 +7,8 @@
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_net.h>
+#include <scheme-private.h>
 #include "hashstring.h"
 #include "locator.h"
 #include "servicecounter.h"

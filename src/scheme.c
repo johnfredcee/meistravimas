@@ -358,6 +358,7 @@ static int is_ascii_name(const char *name, int *pc) {
 static int file_push(scheme *sc, const char *fname);
 static void file_pop(scheme *sc);
 static int file_interactive(scheme *sc);
+static int socket_port(scheme *sc);
 static INLINE int is_one_of(char *s, int c);
 static int alloc_cellseg(scheme *sc, int n);
 static long binary_decode(const char *s);
@@ -1345,6 +1346,10 @@ static void file_pop(scheme *sc) {
 static int file_interactive(scheme *sc) {
 	return sc->file_i==0 && sc->load_stack[0].rep.stdio.file==stdin
 		   && sc->inport->_object._port->kind&port_file;
+}
+
+static int socket_port(scheme *sc) {
+	return  sc->inport->_object._port->kind&port_net;
 }
 
 static port *port_rep_from_filename(scheme *sc, const char *fn, int prop) {
@@ -2487,6 +2492,11 @@ static pointer opexe_0(scheme *sc, enum scheme_opcodes op) {
 				fprintf(sc->outport->_object._port->rep.stdio.file,
 						"Loading %s\n", strvalue(car(sc->args)));
 			}
+			if (socket_port(sc)) {				
+				 char    tmp[STRBUFFSIZE];
+				 snprintf(tmp, STRBUFFSIZE, "Loading %s\n", strvalue(car(sc->args)));				 
+				 SDLNet_TCP_Send(sc->outport->_object._port->rep.net.skt, tmp, strlen(tmp));				 
+			}
 			if(!file_push(sc,strvalue(car(sc->args)))) {
 				Error_1(sc,"unable to open", car(sc->args));
 			} else {
@@ -2506,7 +2516,7 @@ static pointer opexe_0(scheme *sc, enum scheme_opcodes op) {
 				/* NOTREACHED */
 			}
 			/* If interactive, be nice to user. */
-			if(file_interactive(sc)) {
+			if (file_interactive(sc) || socket_port(sc)) {
 				sc->envir = sc->global_env;
 				dump_stack_reset(sc);
 				putstr(sc,"\n");
@@ -2538,7 +2548,7 @@ static pointer opexe_0(scheme *sc, enum scheme_opcodes op) {
 			if(sc->tracing) {
 				putstr(sc,"\nGives: ");
 			}
-			if(file_interactive(sc)) {
+			if(file_interactive(sc) || socket_port(sc)) {
 				sc->print_flag = 1;
 				sc->args = sc->value;
 				s_goto(sc,OP_P0LIST);

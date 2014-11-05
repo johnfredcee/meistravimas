@@ -185,6 +185,26 @@ void update(double t, double dt) {
 	(void) dt;
 }
 
+SDL_Thread* init_scheme(scheme* sc)
+{
+	std::array<std::string,2> scheme_files = { "init", "image" };
+
+	int scheme_ok =  scheme_init_custom_alloc(sc, SDL_malloc, SDL_free);
+	if(!scheme_ok) {
+		std::cerr << "Tiny scheme init failed" << std::endl;
+		return nullptr;
+	}
+	for(auto const &f : scheme_files) {
+		load_scheme(sc, f.c_str());
+	}
+	SDL_Thread *server_thread = launch_server(sc);
+	if (server_thread == nullptr) {
+		std::cerr << "Server failed to start " << std::endl;
+		return nullptr;
+	}
+	return server_thread;
+}
+
 int main(int argc, char **argv) {
 	(void) argc;
 	(void) argv;
@@ -193,19 +213,15 @@ int main(int argc, char **argv) {
 	if(!physfsok) {
 		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
 	}
-	int scheme_ok =  scheme_init_custom_alloc(&tinyscm, SDL_malloc, SDL_free);
-	if(!scheme_ok) {
-		std::cerr << "Tiny scheme init failed" << std::endl;
-	}
-	load_scheme(&tinyscm, "init");
 	if(SDLNet_Init() < 0) {
 		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
 		return -1;
 	}
-	SDL_Thread *server_thread = launch_server(&tinyscm);
+	SDL_Thread* server_thread = init_scheme(&tinyscm);
 	if (server_thread == nullptr) {
-		std::cerr << "Server failed to start " << std::endl;
-	}
+		std::cerr << "Unable to start server thread " << SDLNet_GetError() << std::endl;
+		return -1;
+	}		
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;

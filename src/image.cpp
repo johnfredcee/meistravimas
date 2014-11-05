@@ -7,8 +7,10 @@
 #include <cctype>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_net.h>
 #include <SOIL.h>
 #include <res_path.h>
+#include <scheme-private.h>
 
 #include "hashstring.h"
 #include "locator.h"
@@ -16,6 +18,7 @@
 #include "service.h"
 #include "servicecheckout.h"
 #include "image.h"
+
 
 
 namespace venk
@@ -137,4 +140,26 @@ Image::~Image()
         SOIL_free_image_data(mPixels);
 }
 
+// Scheme bindings
+
+extern "C"
+{
+	pointer add_image_from_scheme(scheme *sc, pointer args)
+	{
+		pointer arg;
+
+		if( is_string( arg = pair_car(args)) )
+		{
+			char *name;
+			name = string_value( arg );
+			std::cout << "Creating image named " << name << std::endl;
+		} else {
+			return sc->F;
+		}		
+		return sc->T;
+	}
 }
+
+}
+
+
