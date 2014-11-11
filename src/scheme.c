@@ -28,7 +28,6 @@
 #else
 #define USE_TRACING 1
 #endif
-
 #include <SDL_net.h>
 
 #define _SCHEME_SOURCE
@@ -82,7 +81,7 @@
  *  Basic memory allocation units
  */
 
-#define banner "TinyScheme 1.41"
+#define banner "GameScheme - based on TinyScheme 1.41"
 
 #include <string.h>
 #include <stdlib.h>
@@ -197,8 +196,8 @@ INTERFACE INLINE int is_string(pointer p)     { return (type(p)==T_STRING); }
 INTERFACE static int is_list(scheme *sc, pointer p);
 INTERFACE INLINE int is_vector(pointer p)    { return (type(p)==T_VECTOR); }
 INTERFACE static void fill_vector(pointer vec, pointer obj);
-INTERFACE static pointer vector_elem(pointer vec, int ielem);
-INTERFACE static pointer set_vector_elem(pointer vec, int ielem, pointer a);
+INTERFACE pointer vector_elem(pointer vec, int ielem);
+INTERFACE pointer set_vector_elem(pointer vec, int ielem, pointer a);
 INTERFACE INLINE int is_number(pointer p)    { return (type(p)==T_NUMBER); }
 INTERFACE INLINE int is_integer(pointer p) {
 	if(!is_number(p))
@@ -279,7 +278,7 @@ INTERFACE INLINE void setimmutable(pointer p) { typeflag(p) |= T_IMMUTABLE; }
  INTERFACE INLINE int is_opaque(pointer p)    { return (type(p)==T_OPAQUE); }
  INTERFACE void       *opaquevalue(pointer p) { return (p)->_object._opaque._pvalue; }
  INTERFACE const char *opaquetag(pointer p)   { return (p)->_object._opaque._tag; }
- INTERFACE static pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*));
+ INTERFACE pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*));
 #endif
 
 
@@ -301,6 +300,7 @@ static INLINE int Cisspace(int c) { return isascii(c) && isspace(c); }
 static INLINE int Cisupper(int c) { return isascii(c) && isupper(c); }
 static INLINE int Cislower(int c) { return isascii(c) && islower(c); }
 #endif
+
 
 #if USE_ASCII_NAMES
 static const char *charnames[32]= {
@@ -596,8 +596,8 @@ static int alloc_cellseg(scheme *sc, int n) {
 	long i;
 	int k;
 	int adj=ADJ;
-	if(adj<sizeof(struct cell)) {
-		adj=sizeof(struct cell);
+	if(adj < (int) sizeof(struct cell)) {
+		 adj = (int) sizeof(struct cell);
 	}
 	for(k = 0; k < n; k++) {
 		if(sc->last_cell_seg >= CELL_NSEGMENT - 1)
@@ -677,7 +677,7 @@ static pointer _get_cell(scheme *sc, pointer a, pointer b) {
 }
 
 /* make sure that there is a given number of cells free */
-static pointer reserve_cells(scheme *sc, int n) {
+pointer reserve_cells(scheme *sc, int n) {
 	if(sc->no_memory) {
 		return sc->NIL;
 	}
@@ -1007,7 +1007,7 @@ INTERFACE static void fill_vector(pointer vec, pointer obj) {
 	}
 }
 
-INTERFACE static pointer vector_elem(pointer vec, int ielem) {
+INTERFACE pointer vector_elem(pointer vec, int ielem) {
 	int n=ielem/2;
 	if(ielem%2==0) {
 		return car(vec+1+n);
@@ -1016,7 +1016,7 @@ INTERFACE static pointer vector_elem(pointer vec, int ielem) {
 	}
 }
 
-INTERFACE static pointer set_vector_elem(pointer vec, int ielem, pointer a) {
+INTERFACE pointer set_vector_elem(pointer vec, int ielem, pointer a) {
 	int n=ielem/2;
 	if(ielem%2==0) {
 		return car(vec+1+n)=a;
@@ -1655,7 +1655,7 @@ INTERFACE void putcharacter(scheme *sc, int c) {
 /* read characters up to delimiter, but cater to character constants */
 static char *readstr_upto(scheme *sc, char *delim) {
 	char *p = sc->strbuff;
-	while((p - sc->strbuff < sizeof(sc->strbuff)) &&
+	while((p - sc->strbuff < (int) sizeof(sc->strbuff)) &&
 			!is_one_of(delim, (*p++ = inchar(sc))));
 	if(p == sc->strbuff+2 && p[-2] == '\\') {
 		*p=0;
@@ -1674,7 +1674,7 @@ static pointer readstrexp(scheme *sc) {
 	enum { st_ok, st_bsl, st_x1, st_x2, st_oct1, st_oct2 } state=st_ok;
 	for(;;) {
 		c=inchar(sc);
-		if(c == EOF || p-sc->strbuff > sizeof(sc->strbuff)-1) {
+		if(c == EOF || p-sc->strbuff > (int) sizeof(sc->strbuff)-1) {
 			return sc->F;
 		}
 		switch(state) {
@@ -1782,8 +1782,11 @@ static INLINE int is_one_of(char *s, int c) {
 }
 
 /* skip white characters */
-static INLINE int skipspace(scheme *sc) {
-	int c = 0, curr_line = 0;
+static INLINE int skipspace(scheme *sc) {	 
+	 int c = 0;
+#if SHOW_ERROR_LINE
+	 int curr_line = 0;
+#endif
 	do {
 		c=inchar(sc);
 #if SHOW_ERROR_LINE
@@ -2079,7 +2082,7 @@ static pointer mk_continuation(scheme *sc, pointer d) {
 }
 
  
-INTERFACE static pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*)) {
+INTERFACE pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*)) {
 	pointer x = get_cell(sc, sc->NIL, sc->NIL);
 	typeflag(x) = (T_OPAQUE | T_ATOM);
 
@@ -3450,7 +3453,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
 	return sc->T;
 }
 
-static int is_list(scheme *sc, pointer a)
+int is_list(scheme *sc, pointer a)
 { return list_length(sc,a) >= 0; }
 
 /* Result is:
@@ -4675,6 +4678,9 @@ void scheme_load_file(scheme *sc, FILE *fin)
 { scheme_load_named_file(sc,fin,0); }
 
 void scheme_load_named_file(scheme *sc, FILE *fin, const char *filename) {
+#if !SHOW_ERROR_LINE
+	 (void) filename;
+#endif
 	dump_stack_reset(sc);
 	sc->envir = sc->global_env;
 	sc->file_i=0;

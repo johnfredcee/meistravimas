@@ -4,7 +4,7 @@
 #define _SCHEME_H
 
 #include <stdio.h>
-
+#include <ctype.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,6 +166,8 @@ pointer mk_counted_string(scheme *sc, const char *str, int len);
 pointer mk_empty_string(scheme *sc, int len, char fill);
 pointer mk_character(scheme *sc, int c);
 pointer mk_foreign_func(scheme *sc, foreign_func f);
+pointer mk_opaque(scheme *sc, const char *tag, void *ptr, void (*free_func)(void*));
+
 void putstr(scheme *sc, const char *s);
 int list_length(scheme *sc, pointer a);
 int eqv(pointer a, pointer b);
@@ -264,8 +266,3 @@ void scheme_register_foreign_func_list(scheme * sc,
 #endif
 
 
-/*
-Local variables:
-c-file-style: "k&r"
-End:
-*/

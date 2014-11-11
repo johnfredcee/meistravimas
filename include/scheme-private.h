@@ -173,6 +173,9 @@ enum scheme_opcodes {
 #define cons(sc,a,b) _cons(sc,a,b,0)
 #define immutable_cons(sc,a,b) _cons(sc,a,b,1)
 
+pointer set_vector_elem(pointer vec, int ielem, pointer a);
+pointer vector_elem(pointer vec, int ielem);
+
 int is_string(pointer p);
 char *string_value(pointer p);
 int is_number(pointer p);

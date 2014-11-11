@@ -10,7 +10,9 @@
 #include <SDL_net.h>
 #include <SOIL.h>
 #include <res_path.h>
+#include <scheme-defs.h>
 #include <scheme-private.h>
+#include <scheme.h>
 
 #include "hashstring.h"
 #include "locator.h"
@@ -61,10 +63,40 @@ std::shared_ptr<Image> ImageService::loadImage(const char *filename)
     return image;
 }
 
+std::shared_ptr<Image> ImageService::makeImage(const char* name, const Uint8* mem, int width, int height, int channels)
+{
+    std::shared_ptr<Image> image = std::make_shared<Image>(mem, height, width, channels);
+    imageTable.insert(ImageLookupTable_t::value_type(name, image));
+    return image;
+}
+
 std::shared_ptr<Image> ImageService::getImage(const char *name)
 {
     const char *imagename = computeName(name);
     return std::shared_ptr<Image>(imageTable.find(imagename)->second);
+}
+
+std::function<const char*()> ImageService::enumerateImages()
+{
+	ImageLookupTable_t::iterator  image_it = imageTable.begin();
+	auto result = [=]() mutable -> const char*
+	{
+		if (image_it != imageTable.end()) {
+			const char* name = (image_it->first).c_str();
+			++image_it;				
+			return name;
+		}
+		return nullptr;
+	};
+	return result;
+}
+// -------------------- Image methods --------------------
+
+Image::Image(const Uint8* mem, int width, int height, int channels) : mWidth(width), mHeight(height), mChannels(channels)
+{
+	Sint64 size = width*height;
+	mPixels = SOIL_load_image_from_memory((const unsigned char *)mem, size, &mWidth, &mHeight, &mChannels, SOIL_LOAD_AUTO);
+	return;
 }
 
 Image::Image(const std::string& fileName) : mPixels(nullptr)
@@ -144,19 +176,99 @@ Image::~Image()
 
 extern "C"
 {
+	static const char* imageTag = "IMAGE";
+
+	/* to manage the lifetime of images in scheme */
+	typedef std::unordered_map< std::string, std::shared_ptr<Image> > SchemeImageTable_t;
+	SchemeImageTable_t scheme_images;
+
+	/* this will get called when the scheme garbage collector wants it gone */
+	void scheme_image_delete(void* ptr)
+	{
+		const char *ref = (const char*) ptr;
+		scheme_images.erase(ref);
+		SDL_free(ptr);
+	}
+
+	/* add an image in scheme vector form to the image management */
 	pointer add_image_from_scheme(scheme *sc, pointer args)
 	{
-		pointer arg;
-
-		if( is_string( arg = pair_car(args)) )
+		pointer name_arg;
+		if( is_string( name_arg = pair_car(args)) )
 		{
 			char *name;
-			name = string_value( arg );
+			name = string_value( name_arg );
 			std::cout << "Creating image named " << name << std::endl;
-		} else {
-			return sc->F;
-		}		
-		return sc->T;
+			if (scheme_images.find(name) != scheme_images.end() ) 
+			{
+				std::cout << "Image named " << name << " already exists " << std::endl;
+				goto bad_args;
+			}
+			// to do - need height & width
+			args = pair_cdr(args);
+			long width = 0;
+			if ((args != nullptr) && (is_integer(pair_car(args))))
+			{
+				width = ivalue(pair_car(args));
+			} else {
+				goto bad_args;
+			}
+			// to do - need height & width
+			args = pair_cdr(args);
+			long height = 0;
+			if ((args != nullptr) && (is_integer(pair_car(args))))
+			{
+				height = ivalue(pair_car(args));
+			} else {
+				goto bad_args;
+			}					
+			args = pair_cdr(args);
+			pointer image_arg = pair_car(args);
+			if ( is_pair(image_arg) ) {
+				int    channel_size = height * width;
+				int    nchannels = list_length(sc, image_arg);				
+				int    channeli  = nchannels - 1;
+				Uint8 *buf = (Uint8*) SDL_malloc(nchannels * channel_size);
+				while (image_arg != nullptr)
+				{
+					pointer channel_name = pair_car(pair_car(image_arg));
+					if (is_symbol(channel_name)) {
+						std::cout << "Channel : " << symname(channel_name) << std::endl;
+					} else {
+						goto bad_args;
+					}
+					pointer channel_data = pair_car(pair_cdr(image_arg));
+					if (is_vector(channel_data)) {
+						channel_size = ivalue(channel_data);
+						std::cout << "Size : " << ivalue(channel_data) << " bytes." << std::endl;
+						for(Sint32 i = 0; i < ivalue(channel_data); i++) {
+							pointer element = vector_elem(channel_data,i);
+							if (!is_number(element))
+								goto bad_args;
+							buf[i*nchannels+channeli] = (Uint8)(rvalue(element) * 255.0);
+						}
+					} else {
+						goto bad_args;
+					}
+					channeli--;
+					image_arg = pair_cdr(image_arg);
+				}
+				ServiceCheckout<ImageService> images;
+				// to do -- table of scheme managed images / table or opaque type?
+				std::shared_ptr<Image> scheme_image = images->makeImage(name, buf, width, height, nchannels);
+				SDL_free(buf);			
+				auto result = scheme_images.emplace(make_pair(name, scheme_image));
+				if (!result.second) {
+					std::cout << "image : " << name << " insertion failed" << std::endl;
+					goto bad_args;
+				}
+				const char* ref = SDL_strdup(name);
+				return mk_opaque(sc, imageTag, (void*) ref, scheme_image_delete);
+			}
+		} 
+  bad_args:
+		std::cout << "Bad arguments " << std::endl;
+		return sc->F;
 	}
 }
 
