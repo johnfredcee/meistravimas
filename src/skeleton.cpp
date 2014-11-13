@@ -200,7 +200,13 @@ int main(int argc, char **argv) {
 		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
 		return -1;
 	}
-	ServiceRegistry<ScriptingService>::initialise();	
+	ServiceRegistry<ScriptingService>::initialise();
+	if (argc > 1) {
+		ServiceCheckout<ScriptingService> scripting;		
+		for(int i = 0; i < argc-1; i++) {
+			scripting->load(argv[i-1]);
+		}
+	}
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
