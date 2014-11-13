@@ -19,9 +19,14 @@
 #include "servicecounter.h"
 #include "service.h"
 #include "servicecheckout.h"
+#include "scripting.h"
 #include "image.h"
 
+extern SDL_sem* global_lock;
 
+extern "C" {
+	void register_image_functions(scheme* sc);
+}
 
 namespace venk
 {
@@ -44,6 +49,9 @@ const char *ImageService::computeName(const char *name)
 bool ImageService::initialise(ImageService* self)
 {
 	(void) self;
+	ServiceCheckout<ScriptingService> scripting;
+	scheme* sc = scripting->get_scheme();
+	register_image_functions(sc);
     return true;
 }
 
@@ -193,6 +201,7 @@ extern "C"
 	/* add an image in scheme vector form to the image management */
 	pointer add_image_from_scheme(scheme *sc, pointer args)
 	{
+		SDL_SemWait(global_lock);
 		pointer name_arg;
 		if( is_string( name_arg = pair_car(args)) )
 		{
@@ -263,12 +272,42 @@ extern "C"
 					goto bad_args;
 				}
 				const char* ref = SDL_strdup(name);
+				SDL_SemPost(global_lock);
 				return mk_opaque(sc, imageTag, (void*) ref, scheme_image_delete);
 			}
 		} 
   bad_args:
+		SDL_SemPost(global_lock);
 		std::cout << "Bad arguments " << std::endl;
 		return sc->F;
+	}
+
+	pointer image_names(scheme* sc, pointer args)
+	{
+		SDL_SemWait(global_lock);
+		if(args != sc->NIL)
+		{
+			return sc->F;
+		}		
+		ServiceCheckout<ImageService> images;
+		auto enumerator = images->enumerateImages();
+		const char* name = nullptr;
+		pointer result = sc->NIL;
+		while( (name = enumerator()) != nullptr )
+		{
+			result = cons(sc, mk_string(sc, name), result);
+		}
+		SDL_SemPost(global_lock);
+		return result;
+	}
+
+	void register_image_functions(scheme* sc)
+	{
+		/* inline lustration how to define a "foreign" function
+		   implemented in C */
+		scheme_define(sc,sc->global_env,mk_symbol(sc,"image-names"),mk_foreign_func(sc, image_names));
+		scheme_define(sc,sc->global_env,mk_symbol(sc,"add-image"),mk_foreign_func(sc, add_image_from_scheme));
+		
 	}
 }
 

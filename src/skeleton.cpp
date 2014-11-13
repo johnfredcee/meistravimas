@@ -31,6 +31,7 @@
 #include "program.h"
 #include "buffer.h"
 #include "bufferbuilder.h"
+#include "scripting.h"
 #include "torus.h"
 #include "renderstate.h"
 #include "timer.h"
@@ -41,6 +42,8 @@ using namespace venk;
 
 const int screen_width  = 640;
 const int screen_height = 480;
+
+SDL_sem* global_lock = nullptr;
 
 GLuint gVBO = 0;
 GLuint gIBO = 0;
@@ -185,30 +188,10 @@ void update(double t, double dt) {
 	(void) dt;
 }
 
-SDL_Thread* init_scheme(scheme* sc)
-{
-	std::array<std::string,2> scheme_files = { "init", "image" };
-
-	int scheme_ok =  scheme_init_custom_alloc(sc, SDL_malloc, SDL_free);
-	if(!scheme_ok) {
-		std::cerr << "Tiny scheme init failed" << std::endl;
-		return nullptr;
-	}
-	for(auto const &f : scheme_files) {
-		load_scheme(sc, f.c_str());
-	}
-	SDL_Thread *server_thread = launch_server(sc);
-	if (server_thread == nullptr) {
-		std::cerr << "Server failed to start " << std::endl;
-		return nullptr;
-	}
-	return server_thread;
-}
 
 int main(int argc, char **argv) {
 	(void) argc;
 	(void) argv;
-	scheme tinyscm;
 	int physfsok = PHYSFS_init(argv[0]);
 	if(!physfsok) {
 		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
@@ -217,15 +200,12 @@ int main(int argc, char **argv) {
 		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
 		return -1;
 	}
-	SDL_Thread* server_thread = init_scheme(&tinyscm);
-	if (server_thread == nullptr) {
-		std::cerr << "Unable to start server thread " << SDLNet_GetError() << std::endl;
-		return -1;
-	}		
+	ServiceRegistry<ScriptingService>::initialise();	
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
 	} else {
+
 		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -337,6 +317,7 @@ int main(int argc, char **argv) {
 							double currentTime = timeNow();
 							double accumulator = dt;
 							bool	quit = false;
+							global_lock = SDL_CreateSemaphore( 1 );
 							SDL_Event e;
 							while(!quit) {
 								double newTime = timeNow();
@@ -346,12 +327,19 @@ int main(int argc, char **argv) {
 								currentTime = newTime;
 								accumulator += frameTime;
 								while(accumulator >= dt) {
+									SDL_SemWait
+											(global_lock);												 
 									update(t, dt);
+									SDL_SemPost(global_lock);								
 									t += dt;
 									accumulator -= dt;
 								}
 								const double alpha = accumulator / dt;
+								SDL_SemWait(global_lock);												 
+								
 								render(1.0 - alpha, window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+								
+
 								//Handle events on queue
 								while(SDL_PollEvent(&e) != 0) {
 									//User requests quit
@@ -359,6 +347,11 @@ int main(int argc, char **argv) {
 										quit = true;
 									}
 								}
+								SDL_SemPost(global_lock);																	
+							}
+							if (global_lock != nullptr) {
+								SDL_DestroySemaphore(global_lock);
+								global_lock = nullptr;
 							}
 						} else {
 							std::cerr << "Creating texture failed" << std::endl;
@@ -378,9 +371,7 @@ int main(int argc, char **argv) {
 			ServiceRegistry<ImageService>::shutdown();
 		}
 	}
-	int server_exit;
-	SDL_WaitThread(server_thread, &server_exit);
-	scheme_deinit(&tinyscm);
+	ServiceRegistry<ScriptingService>::shutdown();
 	SDLNet_Quit();
 	int phsyfhshutdown = PHYSFS_deinit();
 	if(!phsyfhshutdown) {
