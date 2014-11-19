@@ -37,8 +37,9 @@ typedef struct port {
 		} stdio;
 		struct {
 			char *start;
-			char *past_the_end;
+			char *past_the_end;			 
 			char *curr;
+			int free_it;			 
 		} string;
 		struct {
 			 TCPsocket skt;
@@ -216,6 +217,7 @@ int is_promise(pointer p);
 int is_environment(pointer p);
 int is_immutable(pointer p);
 void setimmutable(pointer p);
+pointer mk_proc(scheme *sc, enum scheme_opcodes op);	
 
 #ifdef __cplusplus
 }

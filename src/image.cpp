@@ -20,6 +20,7 @@
 #include "service.h"
 #include "servicecheckout.h"
 #include "scripting.h"
+#include "tinyscm_if.h"
 #include "image.h"
 
 extern SDL_sem* global_lock;
@@ -169,8 +170,10 @@ std::shared_ptr<SDL_Surface> Image::surface() const
     {
         if (s) SDL_FreeSurface(s);
     };
-    std::shared_ptr<SDL_Surface> result(SDL_CreateRGBSurfaceFrom(mPixels, mWidth, mHeight, mChannels * 8, mWidth * mChannels, rmask, gmask, bmask, amask ),
-                                        surface_deleter);
+    std::shared_ptr<SDL_Surface> result(
+		SDL_CreateRGBSurfaceFrom(mPixels, mWidth, mHeight, mChannels * 8, mWidth * mChannels,
+								 rmask, gmask, bmask, amask ),
+		surface_deleter);
     return result;
 }
 
@@ -201,7 +204,7 @@ extern "C"
 	/* add an image in scheme vector form to the image management */
 	pointer add_image_from_scheme(scheme *sc, pointer args)
 	{
-		SDL_SemWait(global_lock);
+		hold_global_lock();
 		pointer name_arg;
 		if( is_string( name_arg = pair_car(args)) )
 		{
@@ -232,14 +235,22 @@ extern "C"
 				goto bad_args;
 			}					
 			args = pair_cdr(args);
+			if (!is_pair(args))
+				goto bad_args;
 			pointer image_arg = pair_car(args);
 			if ( is_pair(image_arg) ) {
 				int    channel_size = height * width;
 				int    nchannels = list_length(sc, image_arg);				
 				int    channeli  = nchannels - 1;
 				Uint8 *buf = (Uint8*) SDL_malloc(nchannels * channel_size);
-				while (image_arg != nullptr)
-				{
+				while ((image_arg != nullptr) && (image_arg != sc->NIL))
+				{	
+					if (!is_pair(image_arg))
+						goto bad_args;
+					
+					if (!is_pair(pair_car(image_arg)))
+						goto bad_args;
+					
 					pointer channel_name = pair_car(pair_car(image_arg));
 					if (is_symbol(channel_name)) {
 						std::cout << "Channel : " << symname(channel_name) << std::endl;
@@ -272,19 +283,19 @@ extern "C"
 					goto bad_args;
 				}
 				const char* ref = SDL_strdup(name);
-				SDL_SemPost(global_lock);
+				release_global_lock();
 				return mk_opaque(sc, imageTag, (void*) ref, scheme_image_delete);
 			}
 		} 
   bad_args:
-		SDL_SemPost(global_lock);
+		release_global_lock();
 		std::cout << "Bad arguments " << std::endl;
 		return sc->F;
 	}
 
 	pointer image_names(scheme* sc, pointer args)
 	{
-		SDL_SemWait(global_lock);
+		hold_global_lock();
 		if(args != sc->NIL)
 		{
 			return sc->F;
@@ -297,7 +308,7 @@ extern "C"
 		{
 			result = cons(sc, mk_string(sc, name), result);
 		}
-		SDL_SemPost(global_lock);
+		release_global_lock();
 		return result;
 	}
 

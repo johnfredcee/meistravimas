@@ -333,8 +333,7 @@ int main(int argc, char **argv) {
 								currentTime = newTime;
 								accumulator += frameTime;
 								while(accumulator >= dt) {
-									SDL_SemWait
-											(global_lock);												 
+									SDL_SemWait(global_lock);												 
 									update(t, dt);
 									SDL_SemPost(global_lock);								
 									t += dt;

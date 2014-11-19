@@ -28,6 +28,7 @@
 #else
 #define USE_TRACING 1
 #endif
+#include <SDL.h>
 #include <SDL_net.h>
 
 #define _SCHEME_SOURCE
@@ -397,7 +398,6 @@ static int token(scheme *sc);
 static void printslashstring(scheme *sc, char *s, int len);
 static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen);
 static void printatom(scheme *sc, pointer l, int f);
-static pointer mk_proc(scheme *sc, enum scheme_opcodes op);
 static pointer mk_closure(scheme *sc, pointer c, pointer e);
 static pointer mk_continuation(scheme *sc, pointer d);
 static pointer reverse(scheme *sc, pointer a);
@@ -1417,6 +1417,7 @@ static port *port_rep_from_string(scheme *sc, char *start, char *past_the_end, i
 	pt->rep.string.start=start;
 	pt->rep.string.curr=start;
 	pt->rep.string.past_the_end=past_the_end;
+	pt->rep.string.free_it = 0;
 	return pt;
 }
 
@@ -1470,6 +1471,7 @@ static port *port_rep_from_scratch(scheme *sc) {
 	pt->rep.string.start=start;
 	pt->rep.string.curr=start;
 	pt->rep.string.past_the_end=start+BLOCK_SIZE-1;
+	pt->rep.string.free_it = 0;
 	return pt;
 }
 
@@ -1498,6 +1500,10 @@ static void port_close(scheme *sc, pointer p, int flag) {
 		  }
 		  if (pt->kind&port_net) {
 			   SDLNet_TCP_Close(pt->rep.net.skt);
+		  }
+		  if (pt->kind&port_string) {
+			   if (pt->rep.string.free_it != 0)
+					sc->free(pt->rep.string.start);
 		  }
 		  pt->kind=port_free;
 	 }
@@ -1530,6 +1536,7 @@ static int basic_inchar(port *pt) {
 		 {
 			  int result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
 			  if (result <= 0) {
+				   fprintf(stderr,"Client closed connection\n");
 				   pt->kind |= port_saw_EOF;
 				   return EOF;
 			  }
@@ -1543,8 +1550,8 @@ static int basic_inchar(port *pt) {
 			  pt->rep.net.start = pt->rep.net.buffer;
 		 return result;
 	}
-	if(*pt->rep.string.curr == 0 ||
-	   pt->rep.string.curr == pt->rep.string.past_the_end) {
+	if((pt->rep.string.curr == NULL) ||
+	   (pt->rep.string.curr == pt->rep.string.past_the_end)) {
 		 return EOF;
 	} else {
 		 return *pt->rep.string.curr++;
@@ -1576,14 +1583,16 @@ static int realloc_port_string(scheme *sc, port *p) {
 	char *start=p->rep.string.start;
 	size_t new_size=p->rep.string.past_the_end-start+1+BLOCK_SIZE;
 	char *str=sc->malloc(new_size);
-	if(str) {
+	if(str != NULL) {
 		memset(str,' ',new_size-1);
 		str[new_size-1]='\0';
 		strcpy(str,start);
 		p->rep.string.start=str;
 		p->rep.string.past_the_end=str+new_size-1;
 		p->rep.string.curr-=start-str;
-		sc->free(start);
+		if (p->rep.string.free_it != 0)			 
+			 sc->free(start);
+		p->rep.string.free_it = 1;
 		return 1;
 	} else {
 		return 0;
@@ -4354,7 +4363,7 @@ static void assign_proc(scheme *sc, enum scheme_opcodes op, char *name) {
 	new_slot_in_env(sc, x, y);
 }
 
-static pointer mk_proc(scheme *sc, enum scheme_opcodes op) {
+pointer mk_proc(scheme *sc, enum scheme_opcodes op) {
 	pointer y;
 	y = get_cell(sc, sc->NIL, sc->NIL);
 	typeflag(y) = (T_PROC | T_ATOM);
