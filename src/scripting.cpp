@@ -38,6 +38,8 @@ bool ScriptingService::initialise(ScriptingService* self)
 		std::cerr << "Tiny scheme init failed" << std::endl;
 		return nullptr;
 	}
+	scheme_set_output_port_file(sc,stdin);
+	scheme_set_input_port_file(sc,stdin);	
 	for(auto const &f : scheme_files) {
 		load_scheme(sc, f.c_str());
 	}
