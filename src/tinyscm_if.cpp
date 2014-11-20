@@ -26,7 +26,7 @@ void load_scheme(scheme* sc, const std::string& fname) {
 		return;
 	}	
 	pointer func = mk_proc(sc, OP_LOAD);
-	pointer args = mk_string(sc, realfname.c_str());	
+	pointer args = _cons( sc, mk_string(sc, realfname.c_str()), sc->NIL, 1);
 	scheme_call(sc, func, args);
 	return;
 }
