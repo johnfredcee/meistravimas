@@ -1626,18 +1626,21 @@ static void backchar(scheme *sc, int c) {
 	pt=sc->inport->_object._port;
 	if(pt->kind&port_file) {
 		ungetc(c,pt->rep.stdio.file);
+		return;
 	} 
 	if(pt->kind&port_net) {
 		 *pt->rep.net.end = c;
 		 pt->rep.net.end++;
 		 if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
-			  pt->rep.net.end = pt->rep.net.buffer;			  
+			  pt->rep.net.end = pt->rep.net.buffer;
+		 return;
 	}
 	if (pt->kind&port_sdl) {
 		 *pt->rep.sdl.end = c;
 		 pt->rep.sdl.end++;
 		 if (pt->rep.sdl.end >=  pt->rep.sdl.buffer + SOCKET_BUFFER_SIZE)
-			  pt->rep.sdl.end = pt->rep.sdl.buffer;			  		 
+			  pt->rep.sdl.end = pt->rep.sdl.buffer;
+		 return;
 	}
 	if(pt->rep.string.curr!=pt->rep.string.start) {
 		 --pt->rep.string.curr;
@@ -4826,7 +4829,7 @@ void scheme_load_socket(scheme *sc, TCPsocket skt) {
 	sc->file_i=0;
 	sc->load_stack[0].kind=port_input|port_output|port_net;
 	sc->load_stack[0].rep.net.skt=skt;
-	sc->load_stack[0].rep.net.buffer = (char*)malloc(SOCKET_BUFFER_SIZE);
+	sc->load_stack[0].rep.net.buffer = (char*) sc->malloc(SOCKET_BUFFER_SIZE);
 	if (sc->load_stack[0].rep.net.buffer == NULL)
 		 return;
 	sc->load_stack[0].rep.net.start=sc->load_stack[0].rep.net.buffer;
@@ -4856,7 +4859,7 @@ void scheme_load_rwop(scheme *sc, SDL_RWops *rwops) {
 	sc->file_i=0;
 	sc->load_stack[0].kind=port_input|port_output|port_sdl;
 	sc->load_stack[0].rep.sdl.rwop = rwops;
-	sc->load_stack[0].rep.net.buffer = (char*)malloc(SOCKET_BUFFER_SIZE);
+	sc->load_stack[0].rep.net.buffer = (char*) sc->malloc(SOCKET_BUFFER_SIZE);
 	if (sc->load_stack[0].rep.sdl.buffer == NULL)
 		 return;	
 	sc->load_stack[0].rep.sdl.start=sc->load_stack[0].rep.sdl.buffer;
