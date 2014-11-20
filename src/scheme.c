@@ -677,7 +677,7 @@ static pointer _get_cell(scheme *sc, pointer a, pointer b) {
 }
 
 /* make sure that there is a given number of cells free */
-pointer reserve_cells(scheme *sc, int n) {
+static pointer reserve_cells(scheme *sc, int n) {
 	if(sc->no_memory) {
 		return sc->NIL;
 	}
@@ -1299,6 +1299,8 @@ static void finalize_cell(scheme *sc, pointer a) {
 		}
 		if(a->_object._port->kind&port_net) {
 			 SDLNet_TCP_Close(a->_object._port->rep.net.skt);
+			 sc->free(a->_object._port->rep.net.buffer);
+			 a->_object._port->rep.net.buffer = NULL;
 		}
 		sc->free(a->_object._port);
 	}
@@ -1433,8 +1435,13 @@ static pointer port_from_string(scheme *sc, char *start, char *past_the_end, int
 static port*  port_rep_from_tcp(scheme *sc, TCPsocket skt) {
 	port *pt;
 	pt=(port*)sc->malloc(sizeof(port));
-	if(pt==0) {
-		return 0;
+	if(pt == NULL) {
+		return NULL;
+	}
+	pt->rep.net.buffer = (char*) sc->malloc(SOCKET_BUFFER_SIZE);
+	if (pt->rep.net.buffer == NULL) {
+		 free(pt);
+		 return NULL;
 	}
 	pt->kind=port_net|port_input|port_output;
 	pt->rep.net.start=pt->rep.net.buffer;
@@ -1458,12 +1465,12 @@ static port *port_rep_from_scratch(scheme *sc) {
 	port *pt;
 	char *start;
 	pt=(port*)sc->malloc(sizeof(port));
-	if(pt==0) {
-		return 0;
+	if(pt==NULL) {
+		return NULL;
 	}
 	start=sc->malloc(BLOCK_SIZE);
-	if(start==0) {
-		return 0;
+	if(start==NULL) {
+		return NULL;
 	}
 	memset(start,' ',BLOCK_SIZE-1);
 	start[BLOCK_SIZE-1]='\0';
@@ -1484,6 +1491,34 @@ static pointer port_from_scratch(scheme *sc) {
 	return mk_port(sc,pt);
 }
 
+static port *port_rep_from_sdl(scheme *sc, SDL_RWops* rwop, int prop)
+{
+	 port *pt;
+	 pt=(port*)sc->malloc(sizeof(port));
+	 if(pt==NULL) {
+		  return NULL;
+	 }
+	 pt->rep.sdl.buffer = (char*) sc->malloc(SOCKET_BUFFER_SIZE);
+	 if (pt->rep.sdl.buffer == NULL) {
+		  free(pt);
+		  return NULL;
+	 }	 
+	 pt->kind=port_sdl | prop;
+	 pt->rep.sdl.rwop = rwop;
+	 pt->rep.sdl.start=pt->rep.sdl.buffer;
+	 pt->rep.sdl.end=pt->rep.sdl.buffer;	 
+	 return pt;
+}
+
+pointer port_from_sdl(scheme*sc, SDL_RWops* rwop, int prop)
+{
+	 port *pt;
+	 pt = port_rep_from_sdl(sc, rwop, prop);
+	 if (pt == NULL)
+		  return sc->NIL;
+	 return mk_port(sc,pt);
+}
+
 static void port_close(scheme *sc, pointer p, int flag) {
 	 (void) sc;
 	 port *pt=p->_object._port;
@@ -1499,7 +1534,14 @@ static void port_close(scheme *sc, pointer p, int flag) {
 			   fclose(pt->rep.stdio.file);
 		  }
 		  if (pt->kind&port_net) {
+			   sc->free(pt->rep.net.buffer);
+			   pt->rep.net.buffer = NULL;			   
 			   SDLNet_TCP_Close(pt->rep.net.skt);
+		  }
+		  if (pt->kind&port_sdl) {
+			   sc->free(pt->rep.sdl.buffer);
+			   pt->rep.sdl.buffer = NULL;
+			   SDL_RWclose(pt->rep.sdl.rwop);
 		  }
 		  if (pt->kind&port_string) {
 			   if (pt->rep.string.free_it != 0)
@@ -1544,11 +1586,30 @@ static int basic_inchar(port *pt) {
 			  if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
 				   pt->rep.net.end = pt->rep.net.buffer;
 		 }
-		 int result = *(pt->rep.net.start);
+		 int chin = *(pt->rep.net.start);
 		 pt->rep.net.start++;
 		 if (pt->rep.net.start >= pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
 			  pt->rep.net.start = pt->rep.net.buffer;
-		 return result;
+		 return chin;
+	}
+	if (pt->kind & port_sdl)
+	{
+		 if (pt->rep.sdl.start == pt->rep.sdl.end)
+		 {
+			  size_t result = SDL_RWread(pt->rep.sdl.rwop, &result, 1, 1);
+			  if (result == 0) {
+				   pt->kind |= port_saw_EOF;
+				   return EOF;
+			  }
+			  pt->rep.sdl.end++;
+			  if (pt->rep.sdl.end >=  pt->rep.sdl.buffer + SOCKET_BUFFER_SIZE)
+				   pt->rep.sdl.end = pt->rep.sdl.buffer;
+		 }
+		 int chin = *(pt->rep.sdl.start);
+		 pt->rep.sdl.start++;
+		 if (pt->rep.sdl.start >= pt->rep.sdl.buffer + SOCKET_BUFFER_SIZE)
+			  pt->rep.sdl.start = pt->rep.sdl.buffer;
+		 return chin;
 	}
 	if((pt->rep.string.curr == NULL) ||
 	   (pt->rep.string.curr == pt->rep.string.past_the_end)) {
@@ -1565,17 +1626,21 @@ static void backchar(scheme *sc, int c) {
 	pt=sc->inport->_object._port;
 	if(pt->kind&port_file) {
 		ungetc(c,pt->rep.stdio.file);
-	} else {
-		 if(pt->kind&port_net) {
-			  *pt->rep.net.end = c;
-			  pt->rep.net.end++;
-			  if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
-				   pt->rep.net.end = pt->rep.net.buffer;			  
-		 } else {
-			  if(pt->rep.string.curr!=pt->rep.string.start) {
-				   --pt->rep.string.curr;
-			  }
-		 }
+	} 
+	if(pt->kind&port_net) {
+		 *pt->rep.net.end = c;
+		 pt->rep.net.end++;
+		 if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
+			  pt->rep.net.end = pt->rep.net.buffer;			  
+	}
+	if (pt->kind&port_sdl) {
+		 *pt->rep.sdl.end = c;
+		 pt->rep.sdl.end++;
+		 if (pt->rep.sdl.end >=  pt->rep.sdl.buffer + SOCKET_BUFFER_SIZE)
+			  pt->rep.sdl.end = pt->rep.sdl.buffer;			  		 
+	}
+	if(pt->rep.string.curr!=pt->rep.string.start) {
+		 --pt->rep.string.curr;
 	}
 }
 
@@ -1603,19 +1668,25 @@ INTERFACE void putstr(scheme *sc, const char *s) {
 	port *pt=sc->outport->_object._port;
 	if(pt->kind&port_file) {
 		fputs(s,pt->rep.stdio.file);
-	} else {
-		 if (pt->kind&port_net) {
-			  for(; *s; s++) {
-				   SDLNet_TCP_Send(pt->rep.net.skt, (const void*) s, 1);
-			  }
-		 } 	else {
-			  for(; *s; s++) {
-				   if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
-						*pt->rep.string.curr++=*s;
-				   } else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
-						*pt->rep.string.curr++=*s;
-				   }
-			  }
+		return;
+	} 
+	if (pt->kind&port_net) {
+		 for(; *s; s++) {
+			  SDLNet_TCP_Send(pt->rep.net.skt, (const void*) s, 1);
+		 }
+		 return;
+	}
+	if (pt->kind&port_sdl) {
+		 for(; *s; s++) {
+			  SDL_RWwrite(pt->rep.sdl.rwop, (const void*) s, 1, 1);
+		 }
+		 return;
+	}		 
+	for(; *s; s++) {
+		 if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
+			  *pt->rep.string.curr++=*s;
+		 } else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
+			  *pt->rep.string.curr++=*s;
 		 }
 	}
 }
@@ -1624,21 +1695,28 @@ static void putchars(scheme *sc, const char *s, int len) {
 	port *pt=sc->outport->_object._port;
 	if(pt->kind&port_file) {
 		fwrite(s,1,len,pt->rep.stdio.file);
-	} else {
-		 if (pt->kind&port_net)
-		 {
-			  for(; len; len--) {
-				   SDLNet_TCP_Send(pt->rep.net.skt, (const void*) s, 1);
-				   s++;
-			  }
-		 } else {
-			  for(; len; len--) {
-				   if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
-						*pt->rep.string.curr++=*s++;
-				   } else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
-						*pt->rep.string.curr++=*s++;
-				   }
-			  }
+		return;
+	}
+	if (pt->kind&port_net)
+	{
+		 for(; len; len--) {
+			  SDLNet_TCP_Send(pt->rep.net.skt, (const void*) s, 1);
+			  s++;
+		 }
+		 return;
+	}
+	if (pt->kind&port_sdl) {
+		 for(; len; len--) {
+			  SDL_RWwrite(pt->rep.sdl.rwop, (const char*) s, 1, 1);
+			  s++;
+		 }
+		 return;
+	}	 	
+	for(; len; len--) {
+		 if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
+			  *pt->rep.string.curr++=*s++;
+		 } else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
+			  *pt->rep.string.curr++=*s++;
 		 }
 	}
 }
@@ -1647,17 +1725,22 @@ INTERFACE void putcharacter(scheme *sc, int c) {
 	port *pt=sc->outport->_object._port;
 	if(pt->kind&port_file) {
 		fputc(c,pt->rep.stdio.file);
-	} else {
-		 if (pt->kind&port_net) {
-			  char ch = (char) c;
-			  SDLNet_TCP_Send(pt->rep.net.skt, (const void*) &ch, 1);			  
-		 } else {
-			  if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
-				   *pt->rep.string.curr++=c;
-			  } else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
-				   *pt->rep.string.curr++=c;
-			  }
-		 }
+		return;
+	} 
+	if (pt->kind&port_net) {
+		 char ch = (char) c;
+		 SDLNet_TCP_Send(pt->rep.net.skt, (const void*) &ch, 1);
+		 return;
+	}
+	if (pt->kind&port_sdl) {
+		 char ch = (char) c;
+		 SDL_RWwrite(pt->rep.sdl.rwop, (const void*) &ch, 1,1);		 
+		 return;
+	}
+	if(pt->rep.string.curr!=pt->rep.string.past_the_end) {
+		 *pt->rep.string.curr++=c;
+	} else if(pt->kind&port_srfi6&&realloc_port_string(sc,pt)) {
+		 *pt->rep.string.curr++=c;
 	}
 }
 
@@ -4724,6 +4807,7 @@ void scheme_load_string(scheme *sc, const char *cmd) {
 	sc->load_stack[0].rep.string.start=(char*)cmd; /* This func respects const */
 	sc->load_stack[0].rep.string.past_the_end=(char*)cmd+strlen(cmd);
 	sc->load_stack[0].rep.string.curr=(char*)cmd;
+	sc->load_stack[0].rep.string.free_it = 0;
 	sc->loadport=mk_port(sc,sc->load_stack);
 	sc->retcode=0;
 	sc->interactive_repl=0;
@@ -4742,6 +4826,9 @@ void scheme_load_socket(scheme *sc, TCPsocket skt) {
 	sc->file_i=0;
 	sc->load_stack[0].kind=port_input|port_output|port_net;
 	sc->load_stack[0].rep.net.skt=skt;
+	sc->load_stack[0].rep.net.buffer = (char*)malloc(SOCKET_BUFFER_SIZE);
+	if (sc->load_stack[0].rep.net.buffer == NULL)
+		 return;
 	sc->load_stack[0].rep.net.start=sc->load_stack[0].rep.net.buffer;
 	sc->load_stack[0].rep.net.end=sc->load_stack[0].rep.net.buffer;
 	sc->loadport=mk_port(sc,sc->load_stack);
@@ -4762,6 +4849,37 @@ void scheme_load_socket(scheme *sc, TCPsocket skt) {
 		sc->retcode=sc->nesting!=0;
 	}
 }
+
+void scheme_load_rwop(scheme *sc, SDL_RWops *rwops) {
+	dump_stack_reset(sc);
+	sc->envir = sc->global_env;
+	sc->file_i=0;
+	sc->load_stack[0].kind=port_input|port_output|port_sdl;
+	sc->load_stack[0].rep.sdl.rwop = rwops;
+	sc->load_stack[0].rep.net.buffer = (char*)malloc(SOCKET_BUFFER_SIZE);
+	if (sc->load_stack[0].rep.sdl.buffer == NULL)
+		 return;	
+	sc->load_stack[0].rep.sdl.start=sc->load_stack[0].rep.sdl.buffer;
+	sc->load_stack[0].rep.sdl.end=sc->load_stack[0].rep.sdl.buffer;
+	sc->loadport=mk_port(sc,sc->load_stack);
+	sc->retcode=0;
+	sc->interactive_repl=0;   
+/* #if SHOW_ERROR_LINE */
+/* 	sc->load_stack[0].rep.stdio.curr_line = 0; */
+/* 	if(fin!=stdin && filename) */
+/* 		sc->load_stack[0].rep.stdio.filename = store_string(sc, strlen(filename), filename, 0); */
+/* 	else */
+/* 		sc->load_stack[0].rep.stdio.filename = NULL; */
+/* #endif */
+	sc->inport=sc->loadport;
+	sc->args = mk_integer(sc,sc->file_i);
+	Eval_Cycle(sc, OP_T0LVL);
+	typeflag(sc->loadport)=T_ATOM;
+	if(sc->retcode==0) {
+		sc->retcode=sc->nesting!=0;
+	}
+}	 
+
 
 void scheme_define(scheme *sc, pointer envir, pointer symbol, pointer value) {
 	pointer x;

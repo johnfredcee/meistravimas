@@ -1,5 +1,6 @@
 
 #include <GL/glew.h>
+#include <physfs.h>
 #include <SDL.h>
 #include <SDL_rwops.h>
 #include <SDL_opengl.h>

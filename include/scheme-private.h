@@ -21,7 +21,8 @@ enum scheme_port_kind {
 	port_net=8,
 	port_input=16,
 	port_output=32,
-	port_saw_EOF=64
+	port_sdl=64,	
+	port_saw_EOF=128
 };
 
 typedef struct port {
@@ -43,10 +44,16 @@ typedef struct port {
 		} string;
 		struct {
 			 TCPsocket skt;
-			 char buffer[SOCKET_BUFFER_SIZE]; 
+			 char *buffer;
 			 char *start;
 			 char *end;
 		} net;
+		 struct {
+			  SDL_RWops *rwop;
+			  char      *buffer;
+			  char *start;
+			  char *end;
+		 } sdl;
 	} rep;
 
 } port;
