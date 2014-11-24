@@ -25,9 +25,23 @@ void load_scheme(scheme* sc, const std::string& fname) {
 		std::cerr << "Could not load " << fname << std::endl;
 		return;
 	}	
-	pointer func = mk_proc(sc, OP_LOAD);
-	pointer args = _cons( sc, mk_string(sc, realfname.c_str()), sc->NIL, 1);
-	scheme_call(sc, func, args);
+	SDL_RWops *rwop = SDL_RWFromMem((void*) source, length);		;
+	int i = ++(sc->file_i);
+	SDL_assert(i < MAXFIL);
+	sc->load_stack[i].kind = port_sdl|port_input;
+	sc->load_stack[i].rep.sdl.rwop = rwop;
+	char *buffer =  (char*) sc->malloc(SOCKET_BUFFER_SIZE);
+	if (buffer == NULL) {
+		  return;
+	}	 	
+	sc->load_stack[i].rep.sdl.buffer = buffer;
+	sc->load_stack[i].rep.sdl.start = buffer;
+	sc->load_stack[i].rep.sdl.end = buffer;
+	sc->nesting_stack[sc->file_i]=0;
+	sc->loadport->_object._port=sc->load_stack+sc->file_i;	
+	pointer args = mk_integer(sc, sc->file_i);
+	pointer proc = mk_proc(sc, OP_T0LVL);
+	scheme_call(sc, proc, args);
 	return;
 }
 
@@ -63,9 +77,9 @@ int server(void *data) {
 		std::cout << "Host connected: " << std::hex << SDLNet_Read32(&remoteIP->host) << ":" << std::dec <<  SDLNet_Read16(&remoteIP->port) << std::endl;
 	} else {
 		std::cerr << "SDLNet_TCP_GetPeerAddress: " << SDLNet_GetError() << std::endl;
-	}	
+	}
+	scheme_load_string(sc, "(write \"SDL Scheme\") (newline)"); 	
 	scheme_set_port_net(sc, csd);
-	scheme_load_string(sc, "(write \"SDL Scheme\") (newline)"); 
 	scheme_load_socket(sc, csd);
 	std::cout << "Terminate connection" << std::endl;
 	/* Close the client socket */

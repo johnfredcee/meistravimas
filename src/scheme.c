@@ -1333,7 +1333,7 @@ static int file_push(scheme *sc, const char *fname) {
 			sc->load_stack[sc->file_i].rep.stdio.filename = store_string(sc, strlen(fname), fname, 0);
 #endif
 	}
-	return fin!=0;
+	return (fin != NULL);
 }
 
 static void file_pop(scheme *sc) {
@@ -1346,8 +1346,8 @@ static void file_pop(scheme *sc) {
 }
 
 static int file_interactive(scheme *sc) {
-	return sc->file_i==0 && sc->load_stack[0].rep.stdio.file==stdin
-		   && sc->inport->_object._port->kind&port_file;
+	 return (sc->file_i==0) && (sc->inport->_object._port->kind&port_file) && (sc->load_stack[0].rep.stdio.file==stdin);
+
 }
 
 static int socket_port(scheme *sc) {
@@ -1596,7 +1596,7 @@ static int basic_inchar(port *pt) {
 	{
 		 if (pt->rep.sdl.start == pt->rep.sdl.end)
 		 {
-			  size_t result = SDL_RWread(pt->rep.sdl.rwop, &result, 1, 1);
+			  size_t result = SDL_RWread(pt->rep.sdl.rwop, pt->rep.sdl.end, 1, 1);
 			  if (result == 0) {
 				   pt->kind |= port_saw_EOF;
 				   return EOF;

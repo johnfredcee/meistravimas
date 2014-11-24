@@ -40,10 +40,10 @@ bool ScriptingService::initialise(ScriptingService* self)
 	}
 	scheme_set_output_port_file(sc,stdout);
 	scheme_set_input_port_file(sc,stdin);	
+	server_thread = launch_server(sc);
 	for(auto const &f : scheme_files) {
 		load_scheme(sc, f.c_str());
-	}
-	server_thread = launch_server(sc);
+	}	
 	if (server_thread == nullptr) {
 		std::cerr << "Server failed to start " << std::endl;
 		return false;
