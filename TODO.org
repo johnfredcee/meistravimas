@@ -1,0 +1,18 @@
+
+
+* Immediate
+** DONE Image eunmeration
+** TODO Cleaner exit when no connection
+** TODO Image loading from the repl
+** TODO Images.cpp does not use the image service
+** TODO Modify torus parameters from the repl
+** TODO Shader reloading from REPL
+** TODO Scene oject enumeration instancing etc from REPL
+
+* Blue Sky
+** Gui generation from scheme
+** Introspect/Edit C++ values via bfd + debug info
+** Meta-type I/O in scheme
+** Declarative scene description / modification
+** Non Emacs client
+** Scheme compiler

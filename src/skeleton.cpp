@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
 				SDL_assert(glGetError() == GL_NO_ERROR);
 				ServiceRegistry<ImageService>::initialise();
 				ServiceCheckout<ImageService> images;
-				std::shared_ptr<Image> img(images->loadImage("images/test.tga"));
+				std::shared_ptr<Image> img(images->loadImage("test.tga"));
 				if(img) {
 					ServiceRegistry<TextureService>::initialise();
 					ServiceRegistry<ProgramService>::initialise();

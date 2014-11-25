@@ -111,7 +111,7 @@ Image::Image(const Uint8* mem, int width, int height, int channels) : mWidth(wid
 Image::Image(const std::string& fileName) : mPixels(nullptr)
 {
     std::string fullFileName = getResourcePath();
-    fullFileName = fullFileName + fileName;
+    fullFileName = fullFileName + "images/" + fileName;
     SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
     if (rwops != nullptr)
     {
