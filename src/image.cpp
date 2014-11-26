@@ -9,6 +9,7 @@
 #include <SDL_opengl.h>
 #include <SDL_net.h>
 #include <SOIL.h>
+#include <physfs.h>
 #include <res_path.h>
 #include <scheme-defs.h>
 #include <scheme-private.h>
@@ -66,9 +67,11 @@ std::shared_ptr<Image> ImageService::loadImage(const char *filename)
 {
 	SDL_assert((filename != nullptr) && (strlen(filename) < Image::maxImageNameLength));
     std::shared_ptr<Image> image = std::make_shared<Image>(filename);
-    const char *imagename = computeName(filename);
-    std::cerr << "Loaded image " << imagename << std::endl;
-    imageTable.insert(ImageLookupTable_t::value_type(imagename, image));
+	if (image) {
+		const char *imagename = computeName(filename);
+		std::cerr << "Loaded image " << imagename << std::endl;
+		imageTable.insert(ImageLookupTable_t::value_type(imagename, image));
+	}
     return image;
 }
 
@@ -143,12 +146,12 @@ Image::Image(const std::string& fileName) : mPixels(nullptr)
         {
             std::cerr << "Probing " << fileName << " failed" << std::endl;
         }
+		SDL_RWclose(rwops);		
     }
     else
     {
         std::cerr << "Opening " << fileName << " failed" << std::endl;
     }
-    SDL_RWclose(rwops);
     return;
 }
 
@@ -298,6 +301,7 @@ extern "C"
 		hold_global_lock();
 		if(args != sc->NIL)
 		{
+			release_global_lock();
 			return sc->F;
 		}		
 		ServiceCheckout<ImageService> images;
@@ -312,11 +316,52 @@ extern "C"
 		return result;
 	}
 
+	pointer image_file_names(scheme* sc, pointer args)
+	{
+		hold_global_lock();
+		if(args != sc->NIL)
+		{
+			release_global_lock();
+			return sc->F;
+		}
+		pointer result = sc->NIL;		
+		char** flist = PHYSFS_enumerateFiles("images");
+		for(char** i = flist; *i != nullptr; i++) {
+			result = cons(sc, mk_string(sc, *i), result);
+		}
+		PHYSFS_freeList(flist);				
+		release_global_lock();
+		return result;
+	}
+
+	pointer load_image(scheme* sc, pointer args)
+	{
+		hold_global_lock();
+		if (is_string(pair_car(args))) {
+			ServiceCheckout<ImageService> images;
+			char *name = string_value(pair_car(args));
+			std::shared_ptr<Image> image = images->loadImage(name);
+			auto result = scheme_images.insert(make_pair(name, image));
+			if (!result.second) {
+				std::cout << "image : " << name << " loading failed" << std::endl;
+				goto bad_args;
+			}			
+			const char* ref = SDL_strdup(name);			
+			release_global_lock();
+			return mk_opaque(sc, imageTag, (void*) ref, scheme_image_delete);
+		}
+  bad_args:
+		release_global_lock();
+		return sc->F;
+	}
+
 	void register_image_functions(scheme* sc)
 	{
 		/* inline lustration how to define a "foreign" function
 		   implemented in C */
 		scheme_define(sc,sc->global_env,mk_symbol(sc,"image-names"),mk_foreign_func(sc, image_names));
+		scheme_define(sc,sc->global_env,mk_symbol(sc,"image-file-names"),mk_foreign_func(sc, image_file_names));
+		scheme_define(sc,sc->global_env,mk_symbol(sc,"load-image"),mk_foreign_func(sc, load_image));		
 		scheme_define(sc,sc->global_env,mk_symbol(sc,"add-image"),mk_foreign_func(sc, add_image_from_scheme));
 		
 	}
