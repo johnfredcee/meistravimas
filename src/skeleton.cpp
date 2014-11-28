@@ -1,4 +1,5 @@
 
+#include <list>
 #include <vector>
 #include <unordered_map>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include <SOIL.h>
 #include <physfs.h>
 #include <scheme-private.h>
+#include <res_path.h>
 
 #include "tuple.h"
 #include "twodee.h"
@@ -36,7 +38,8 @@
 #include "renderstate.h"
 #include "timer.h"
 #include "tinyscm_if.h"
-#include <res_path.h>
+#include "panel.h"
+#include "gui.h"
 
 using namespace venk;
 
