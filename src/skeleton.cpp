@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <string>
+#include <functional>
 #include <memory>
 #include <GL/glew.h>
 #include <SDL.h>
@@ -27,6 +28,9 @@
 #include "service.h"
 #include "servicecheckout.h"
 #include "serviceregistry.h"
+#include "observer.h"
+#include "mouse.h"
+#include "keyboard.h"
 #include "image.h"
 #include "texture.h"
 #include "shader.h"
@@ -40,6 +44,12 @@
 #include "tinyscm_if.h"
 #include "panel.h"
 #include "gui.h"
+#include "nanovg.h"
+#include "nanovg_gl.h"
+#include "blendish.h"
+#include "oui.h"
+#include "gui.h"
+
 
 using namespace venk;
 
@@ -166,7 +176,7 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	view.lookAt(eyePos, eyeTarget);
 	//view.identity();
 	// Clear the color and depth buffers
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	simple->use();
 	// texture->select();
 	// simple->setUniformSampler("textureMap", 0, texture);
@@ -221,6 +231,8 @@ int main(int argc, char **argv) {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+		
 		int physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
 		if(!physfsok) {
 			std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
@@ -236,6 +248,8 @@ int main(int argc, char **argv) {
 			std::cout << *i << std::endl;
 		std::cout << "=============" << std::endl;
 		PHYSFS_freeList(flist);
+
+		// create window
 		auto window_deleter = [](SDL_Window *w) {
 			if(w) SDL_DestroyWindow(w);
 		};
@@ -247,6 +261,8 @@ int main(int argc, char **argv) {
 		if(!window) {
 			std::cerr << "Unable to create SDL_Window" << std::endl;
 		} else {
+
+			// we created window, create renderer
 			auto renderer_deleter = [](SDL_Renderer *r) {
 				if(r) SDL_DestroyRenderer(r);
 			};
@@ -260,11 +276,15 @@ int main(int argc, char **argv) {
 			Uint32 flags = SDL_RENDERER_ACCELERATED  |  SDL_RENDERER_TARGETTEXTURE;
 			std::shared_ptr<SDL_Renderer> renderer(SDL_CreateRenderer(window.get(), -1, flags),  renderer_deleter);
 			if(renderer) {
+
+				// we created renderer, get info about it
 				SDL_RendererInfo info;
 				SDL_GetRendererInfo(renderer.get(), &info);
 				std::cout << " Renderer chosen " << info.name << std::endl;
 				SDL_GLContext glctx = SDL_GL_CreateContext(window.get());
 				SDL_assert(glctx != nullptr);
+
+				// init glew so we can do OpenGL properly
 				Uint32 err = glewInit();
 				if(err != GLEW_OK) {
 					std::cerr << "Glew init failed " << glewGetErrorString(GLEW_VERSION) << std::endl;
@@ -276,6 +296,11 @@ int main(int argc, char **argv) {
 				GLdouble min = 0;
 				glGetDoublev(GL_MINOR_VERSION, &min);
 				std::cout << "OpenGL Version: " << maj << "." << min << std::endl;
+
+				// Now, we need keyboard and mouse
+				ServiceRegistry<MouseService>::initialise();
+				ServiceRegistry<KeyboardService>::initialise();
+				
 				//Use Vsync
 				if(SDL_GL_SetSwapInterval(1) < 0) {
 					std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;
@@ -349,10 +374,35 @@ int main(int argc, char **argv) {
 								
 
 								//Handle events on queue
-								while(SDL_PollEvent(&e) != 0) {
+								SDL_PumpEvents();
+								while(SDL_PeepEvents(&e,1,SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
 									//User requests quit
 									if(e.type == SDL_QUIT) {
+										SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT);
 										quit = true;
+									}
+									// theoretically this code could be replaced by an event filter (TODO)
+									switch(e.type)
+									{
+										case SDL_MOUSEWHEEL:
+										case SDL_MOUSEMOTION:
+										case SDL_MOUSEBUTTONUP:
+										case SDL_MOUSEBUTTONDOWN:
+											{
+												ServiceCheckout<MouseService> squeak;
+												squeak->mouse();
+											}
+											break;
+										case SDL_KEYUP:
+										case SDL_KEYDOWN:
+											{
+												ServiceCheckout<KeyboardService> keyb;
+												keyb->keyboard();
+											}
+											break;
+										default:
+											SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT);
+											break;
 									}
 								}
 								SDL_SemPost(global_lock);																	
@@ -377,6 +427,8 @@ int main(int argc, char **argv) {
 				std::cerr << "Creating renderer failed" << std::endl;
 			}
 			ServiceRegistry<ImageService>::shutdown();
+			ServiceRegistry<KeyboardService>::shutdown();
+			ServiceRegistry<MouseService>::shutdown();			
 		}
 	}
 	ServiceRegistry<ScriptingService>::shutdown();
