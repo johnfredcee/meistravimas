@@ -11,6 +11,11 @@
 #include <SDL_net.h>
 #include <SDL_opengl.h>
 #include <scheme-private.h>
+#include <physfs.h>
+#include <res_path.h>
+#include <scheme-defs.h>
+#include <scheme-private.h>
+#include <scheme.h>
 
 #include "tuple.h"
 #include "twodee.h"
@@ -34,11 +39,14 @@
 #include "nanovg_gl.h"
 #include "blendish.h"
 #include "oui.h"
+#include "scripting.h"
+#include "tinyscm_if.h"
 #include "gui.h"
 
-namespace venk
-{
 
+extern "C"
+{
+	
 typedef enum {
     // label
     ST_LABEL = 0,
@@ -301,6 +309,18 @@ int label(int iconid, const char *label) {
     return item;
 }
 
+pointer scheme_label(scheme *sc, pointer args)
+{
+
+	hold_global_lock();
+	int iconid = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	char *label_text = string_value(pair_car(args));
+	int result = label(iconid, label_text);
+	release_global_lock();
+	return mk_integer(sc, result);
+}
+	
 void buttonhandler(int item, UIevent event) {
 	(void) event;
     const UIButtonData *data = (const UIButtonData *)uiGetHandle(item);
@@ -322,6 +342,17 @@ int button(int iconid, const char *label) {
     return item;
 }
 
+pointer scheme_button(scheme *sc, pointer args) {
+	
+	hold_global_lock();
+	int iconid = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	char *label_text = string_value(pair_car(args));
+	pointer result = mk_integer(sc, button(iconid, label_text));
+	release_global_lock();
+	return result;
+}
+	
 void checkhandler(int item, UIevent event) {
 	(void) event;
     const UICheckData *data = (const UICheckData *)uiGetHandle(item);
@@ -344,6 +375,17 @@ int check(const char *label, int *option) {
     return item;
 }
 
+pointer scheme_check(scheme *sc, pointer args) {
+	hold_global_lock();
+	
+	char *label_text = string_value(pair_car(args));
+	args = pair_cdr(args);
+	int option = ivalue(pair_car(args));	
+	pointer result = mk_integer(sc,check(label_text,&option));
+	release_global_lock();
+	return result;
+}
+	
 // simple logic for a slider
 
 // starting offset of the currently active slider
@@ -422,6 +464,16 @@ int textbox(char *text, int maxsize) {
     return item;
 }
 
+pointer scheme_textbox(scheme *sc, pointer args) {
+	hold_global_lock();
+	char *label_text = string_value(pair_car(args));
+	args = pair_cdr(args);
+	int maxsize = ivalue(pair_car(args));	
+	pointer result = mk_integer(sc,textbox(label_text,maxsize));
+	release_global_lock();
+	return result;
+}
+	
 // simple logic for a radio button
 void radiohandler(int item, UIevent event) {
 	(void) event;
@@ -443,7 +495,23 @@ int radio(int iconid, const char *label, int *value) {
 }
 
 
-int panel() {
+pointer scheme_radio(scheme *sc, pointer args)
+{
+
+	hold_global_lock();
+
+	int iconid = ivalue(pair_car(args));		
+	args = pair_cdr(args);
+	char *label_text = string_value(pair_car(args));
+	args = pair_cdr(args);
+	int value = ivalue(pair_car(args));	
+	pointer result = mk_integer(sc,radio(iconid, label_text, &value));
+	release_global_lock();
+	return result;
+}
+	
+int panel()
+{
     int item = uiItem();
     UIData *data = (UIData *)uiAllocHandle(item, sizeof(UIData));
     data->subtype = ST_PANEL;
@@ -451,6 +519,15 @@ int panel() {
     return item;
 }
 
+pointer scheme_panel(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	
+	pointer result = mk_integer(sc,panel());
+	release_global_lock();
+	return result;
+}
+	
 int hbox() {
     int item = uiItem();
     UIData *data = (UIData *)uiAllocHandle(item, sizeof(UIData));
@@ -458,6 +535,15 @@ int hbox() {
     data->handler = NULL;
     uiSetBox(item, UI_ROW);
     return item;
+}
+
+pointer scheme_hbox(scheme *sc, pointer args) {
+
+	(void) args;
+	hold_global_lock();	
+	pointer result = mk_integer(sc,hbox());
+	release_global_lock();
+	return result;
 }
 
 
@@ -470,10 +556,20 @@ int vbox() {
     return item;
 }
 
+pointer scheme_vbox(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	 
+	pointer result = mk_integer(sc,vbox());
+	release_global_lock();
+	return result;
+}
+	
 // UI LAYOUT --------------------
 
 
-int column_append(int parent, int item) {
+int column_append(int parent, int item)
+{
     uiInsert(parent, item);
     // fill parent horizontally, anchor to previous item vertically
     uiSetLayout(item, UI_HFILL);
@@ -481,54 +577,152 @@ int column_append(int parent, int item) {
     return item;
 }
 
-int column() {
+pointer scheme_column_append(scheme *sc, pointer args)
+{
+	hold_global_lock();
+	int parent = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	int item = ivalue(pair_car(args));
+	args = pair_cdr(args);	
+	pointer result = mk_integer(sc,column_append(parent, item));
+	release_global_lock();
+	return result;
+}
+	
+int column()
+{
     int item = uiItem();
     uiSetBox(item, UI_COLUMN);
     return item;
 }
 
-int vgroup_append(int parent, int item) {
+pointer scheme_column(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	 
+	pointer result = mk_integer(sc,column());
+	release_global_lock();
+	return result;
+}
+	
+int vgroup_append(int parent, int item)
+{
     uiInsert(parent, item);
     // fill parent horizontally, anchor to previous item vertically
     uiSetLayout(item, UI_HFILL);
     return item;
 }
 
+pointer scheme_vgroup_append(scheme *sc, pointer args)
+{
+	hold_global_lock();
+	int parent = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	int item = ivalue(pair_car(args));
+	args = pair_cdr(args);	
+	pointer result = mk_integer(sc,vgroup_append(parent, item));
+	release_global_lock();
+	return result;
+}
+	
 int vgroup() {
     int item = uiItem();
     uiSetBox(item, UI_COLUMN);
     return item;
 }
 
+pointer scheme_vgroup(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	 
+	pointer result = mk_integer(sc,vgroup());
+	release_global_lock();
+	return result;
+}
+	
 int hgroup_append(int parent, int item) {
     uiInsert(parent, item);
     uiSetLayout(item, UI_HFILL);
     return item;
 }
 
+pointer scheme_hgroup_append(scheme *sc, pointer args)
+{
+	hold_global_lock();
+	int parent = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	int item = ivalue(pair_car(args));
+	args = pair_cdr(args);	
+	pointer result = mk_integer(sc,hgroup_append(parent, item));
+	release_global_lock();
+	return result;
+}
+	
 int hgroup_append_fixed(int parent, int item) {
     uiInsert(parent, item);
     return item;
 }
 
+pointer scheme_hgroup_append_fixed(scheme *sc, pointer args)
+{
+	hold_global_lock();
+	int parent = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	int item = ivalue(pair_car(args));
+	args = pair_cdr(args);	
+	pointer result = mk_integer(sc,hgroup_append_fixed(parent, item));
+	release_global_lock();
+	return result;
+}
+	
 int hgroup() {
     int item = uiItem();
     uiSetBox(item, UI_ROW);
     return item;
 }
 
+pointer scheme_hgroup(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	 
+	pointer result = mk_integer(sc,hgroup());
+	release_global_lock();
+	return result;
+}
+	
 int row_append(int parent, int item) {
     uiInsert(parent, item);
     uiSetLayout(item, UI_HFILL);
     return item;
 }
 
+pointer scheme_row_append(scheme *sc, pointer args)
+{
+	hold_global_lock();
+	int parent = ivalue(pair_car(args));
+	args = pair_cdr(args);
+	int item = ivalue(pair_car(args));
+	args = pair_cdr(args);	
+	pointer result = mk_integer(sc,row_append(parent, item));
+	release_global_lock();
+	return result;
+}
+	
 int row() {
     int item = uiItem();
     uiSetBox(item, UI_ROW);
     return item;
 }
 
+pointer scheme_row(scheme *sc, pointer args)
+{
+	(void) args;
+	hold_global_lock();	 
+	pointer result = mk_integer(sc,row());
+	release_global_lock();
+	return result;
+}
+	
 // MAIN EVENT HANDLER -----------
 
 
@@ -555,6 +749,10 @@ void ui_handler(int item, UIevent event) {
 	}
 }
 
+}
+
+namespace venk
+{
 
 bool GuiService::shutdown(GuiService* self)
 {
@@ -658,4 +856,7 @@ bool GuiService::initialise(GuiService* self)
 	return true;
 }
 
+
 }
+
+

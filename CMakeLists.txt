@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (skeleton)
+project (meistravimas)
 
 # Name of the executable
 set(EXENAME ${CMAKE_PROJECT_NAME})
@@ -40,6 +40,6 @@ file(GLOB Sources src/*.c*)
 
 list(APPEND LIBS blendish)
 include_directories(include oui-blendish oui-blendish/nanovg/src)
-add_executable(skeleton ${Sources} ${Includes})
-target_link_libraries(skeleton ${LIBS})
+add_executable(meistravimas ${Sources} ${Includes})
+target_link_libraries(meistravimas ${LIBS})
 
