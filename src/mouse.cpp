@@ -19,7 +19,7 @@ namespace venk
 // service
 
 bool MouseService::initialise(MouseService* self) {
-  if (self == nullptr) {
+  if (self != nullptr) {
 	self->state = new Mouse();
 	self->state->x  = 0;
 	self->state->y  = 0;

@@ -320,6 +320,7 @@ int main(int argc, char **argv) {
 					ServiceRegistry<ProgramService>::initialise();
 					ServiceRegistry<BufferManagerService>::initialise();
 					ServiceRegistry<RenderStateService>::initialise();
+					ServiceRegistry<GuiService>::initialise();
 					{
 						ServiceCheckout<TextureService> textures;
 						textures->setRenderer(renderer);
@@ -372,13 +373,13 @@ int main(int argc, char **argv) {
 								
 								render(1.0 - alpha, window.get(), renderer.get(), tex.get(), simple.get(), buffers);
 								
-
+								SDL_SemPost(global_lock);
+								
 								//Handle events on queue
 								SDL_PumpEvents();
 								while(SDL_PeepEvents(&e,1,SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
 									//User requests quit
 									if(e.type == SDL_QUIT) {
-										SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT);
 										quit = true;
 									}
 									// theoretically this code could be replaced by an event filter (TODO)
@@ -389,23 +390,29 @@ int main(int argc, char **argv) {
 										case SDL_MOUSEBUTTONUP:
 										case SDL_MOUSEBUTTONDOWN:
 											{
+												SDL_SemWait(global_lock);					   			   												
 												ServiceCheckout<MouseService> squeak;
 												squeak->mouse();
+												SDL_SemPost(global_lock);
+												
 											}
 											break;
 										case SDL_KEYUP:
 										case SDL_KEYDOWN:
 											{
+												SDL_SemWait(global_lock);					   												
 												ServiceCheckout<KeyboardService> keyb;
 												keyb->keyboard();
+												SDL_SemPost(global_lock);
+												
 											}
 											break;
 										default:
-											SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT);
+											SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
 											break;
 									}
 								}
-								SDL_SemPost(global_lock);																	
+																						
 							}
 							if (global_lock != nullptr) {
 								SDL_DestroySemaphore(global_lock);
@@ -415,6 +422,7 @@ int main(int argc, char **argv) {
 							std::cerr << "Creating texture failed" << std::endl;
 						}
 					}
+					ServiceRegistry<GuiService>::shutdown();
 					ServiceRegistry<RenderStateService>::shutdown();
 					ServiceRegistry<BufferManagerService>::shutdown();
 					ServiceRegistry<ProgramService>::shutdown();
