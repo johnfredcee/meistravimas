@@ -193,7 +193,6 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	vb->unbindAttribute(simple, "vVertex");
 	//texture->deselect();
 	simple->unUse();
-	SDL_GL_SwapWindow(window);
 }
 
 void update(double t, double dt) {
@@ -372,6 +371,11 @@ int main(int argc, char **argv) {
 								SDL_SemWait(global_lock);												 
 								
 								render(1.0 - alpha, window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+								{
+									ServiceCheckout<GuiService> gui;
+									gui->render();
+								}
+								SDL_GL_SwapWindow(window.get());
 								
 								SDL_SemPost(global_lock);
 								

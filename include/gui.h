@@ -46,7 +46,11 @@ public:
 	
 	/* render the gui from the root, down */
 	bool render();
+	
 protected:
+	
+	int keybObserver;
+	int mausObserver;
 	bool draw(float width, float height);
 	bool mouse(SDL_Event* e);
 	bool keyboard(SDL_Event* e);

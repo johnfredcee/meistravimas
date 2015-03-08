@@ -754,11 +754,12 @@ void ui_handler(int item, UIevent event) {
 namespace venk
 {
 
-bool GuiService::shutdown(GuiService* self)
-{
-	nvgDeleteGL3(self->vg);
-	uiDestroyContext(self->uictx);
-	return true;
+int add_menu_option(int parent, const char *name, int *choice) {
+    int opt = radio(-1, name, choice);
+    uiInsert(parent, opt);
+    uiSetLayout(opt, UI_HFILL|UI_TOP);
+    uiSetMargins(opt, 1, 1, 1, 1);
+    return opt;
 }
 
 bool GuiService::draw(float w, float h)
@@ -772,9 +773,41 @@ bool GuiService::draw(float w, float h)
     ((UIData*)uiGetHandle(root))->handler = roothandler;
     uiSetEvents(root, UI_SCROLL|UI_BUTTON0_DOWN);
     uiSetBox(root, UI_COLUMN);
+
+    static int choice = -1;
+
+    int menu = uiItem();
+    uiSetLayout(menu, UI_HFILL|UI_TOP);
+    uiSetBox(menu, UI_ROW);
+    uiInsert(root, menu);
+
+	int opt_file = add_menu_option(menu, "File", &choice);
+    int opt_view = add_menu_option(menu, "View", &choice);
+    int opt_edit = add_menu_option(menu, "Edit", &choice);
+    int opt_tools = add_menu_option(menu, "Tools", &choice);
+    int opt_about = add_menu_option(menu, "About", &choice);
+
+    if (choice < 0)
+        choice = opt_file;	
+
     int content = uiItem();
     uiSetLayout(content, UI_FILL);
     uiInsert(root, content);
+
+	int democontent = uiItem();
+	uiSetLayout(democontent, UI_TOP);
+	uiSetSize(democontent, 250, 0);
+	uiInsert(content, democontent);
+   
+	int col = column();
+    uiInsert(democontent, col);
+    uiSetMargins(col, 10, 10, 10, 10);
+    uiSetLayout(col, UI_TOP|UI_HFILL);
+    
+    column_append(col, button(BND_ICON_GHOST, "Item 1"));
+    column_append(col, button(BND_ICON_GHOST, "Item 2"));
+    column_append(col, button(BND_ICON_GHOST, "Item 3"));
+
     uiEndLayout();	
     drawUI(vg, 0, BND_CORNER_NONE);
     uiProcess((int)(SDL_GetTicks()*1000.0));
@@ -835,9 +868,12 @@ bool GuiService::keyboard(SDL_Event* event)
 
 bool GuiService::render()
 {
-	nvgBeginFrame(vg, guiWidth, guiHeight, 1.0f);
- 	nvgEndFrame(vg);
+	const int w  = 640;
+	const int h = 480;
 	
+	nvgBeginFrame(vg, guiWidth, guiHeight, 1.0f);
+	draw(w,h);
+ 	nvgEndFrame(vg);	
 	return true;
 }
 
@@ -851,11 +887,21 @@ bool GuiService::initialise(GuiService* self)
     bndSetIconImage(nvgCreateImage(self->vg, "../blender_icons16.png", 0));
 	ServiceCheckout<MouseService> maus;
 	ServiceCheckout<KeyboardService> keyb;
-	maus->observers.addObserver(std::bind(&GuiService::mouse,self,std::placeholders::_1));
-	keyb->observers.addObserver(std::bind(&GuiService::keyboard,self,std::placeholders::_1));
+	self->mausObserver = maus->observers.addObserver(std::bind(&GuiService::mouse,self,std::placeholders::_1));
+	self->keybObserver = keyb->observers.addObserver(std::bind(&GuiService::keyboard,self,std::placeholders::_1));
 	return true;
 }
 
+bool GuiService::shutdown(GuiService* self)
+{
+	ServiceCheckout<MouseService> maus;
+	ServiceCheckout<KeyboardService> keyb;
+	maus->observers.removeObserver(self->mausObserver);
+	keyb->observers.removeObserver(self->keybObserver);
+	nvgDeleteGL3(self->vg);
+	uiDestroyContext(self->uictx);
+	return true;
+}
 
 }
 

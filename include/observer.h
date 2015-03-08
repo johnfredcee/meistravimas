@@ -6,14 +6,21 @@ namespace venk
 	template <typename Observed> class Observable
 	{
   private:
-		typedef  std::function<bool(SDL_Event* e)> Observer;
-		std::vector< Observer > observers;
+		typedef std::function<bool(SDL_Event* e)> Observer;
+		std::unordered_map< int, Observer > observers;
   public:
-		void addObserver(Observer&& observer) {
-			observers.push_back(observer);
+		int addObserver(Observer&& observer) {
+			static int channel = 1;
+			observers.emplace(channel, observer);
+			channel++;
+			return channel-1;
+		}
+		void removeObserver(int channel)
+		{
+			observers.erase(channel);
 		}
 		void notify(SDL_Event* e) {
-			for (const auto& obs : observers) obs(e);
+			for (const auto& kv : observers) kv.second(e);
 		}
 	};
 }
