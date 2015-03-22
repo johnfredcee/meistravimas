@@ -18,7 +18,7 @@ namespace venk {
 
 void load_scheme(scheme* sc, const std::string& fname) {
 	std::string realfname = std::string("scheme/") +fname + std::string(".scm");
-	Sint32 length = 0;
+	Uint64 length = 0;
 	char* source = file_contents(realfname.c_str(), &length);
 	SDL_assert_always((source != nullptr) && (length > 0));	
 	if((source == nullptr) || (length == 0)) {

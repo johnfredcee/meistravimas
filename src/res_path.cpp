@@ -44,7 +44,7 @@ std::string getResourcePath(const std::string &subDir) {
 	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
 }
 
-char *file_contents(const std::string& fileName, Sint32 *length)
+char *file_contents(const std::string& fileName, Uint64 *length)
 {
 	std::string fullFileName = getResourcePath();
 	fullFileName = fullFileName + fileName;
@@ -71,3 +71,28 @@ char *file_contents(const std::string& fileName, Sint32 *length)
 }
 
 }
+
+// C binding
+extern "C"
+{
+	void* get_resource_file(const char* type, const char* name, Uint64 *length) {
+		std::string path(type);
+		path += std::string("/");
+		path += std::string(name);
+		return reinterpret_cast<void*>(venk::file_contents(path, length));
+	}
+
+	SDL_RWops* open_resource(const char* type, const char* name) {
+		std::string path(type);
+		path += std::string("/");
+		path += std::string(name);
+		path = venk::getResourcePath() + path;
+		return SDL_RWFromFile(path.c_str(), "rb");		
+	}
+
+	void closeresource(SDL_RWops* resource) {
+		resource->close(resource);
+	}
+
+}
+			

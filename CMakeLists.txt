@@ -34,12 +34,12 @@ foreach(lib SOIL OpenGL GLEW)
 	add_definitions(${${lib}_DEFINITIONS})
 endforeach(lib)
 
-add_subdirectory(oui-blendish)
+#add_subdirectory(oui-blendish)
 file(GLOB Includes include/*.h)
 file(GLOB Sources src/*.c*)
 
-list(APPEND LIBS blendish)
-include_directories(include oui-blendish oui-blendish/nanovg/src)
+#list(APPEND LIBS blendish)
+include_directories(include)
 add_executable(meistravimas ${Sources} ${Includes})
 target_link_libraries(meistravimas ${LIBS})
 

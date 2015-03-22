@@ -21,7 +21,7 @@ Shader::Shader(GLenum type, const std::string& filename) :  shaderOk(false), sha
 	                          PFNGLGETSHADERIVPROC glGet__iv,
 	                          PFNGLGETSHADERINFOLOGPROC glGet__InfoLog);
 
-	Sint32 length = 0;
+	Uint64 length = 0;
 	char* source = file_contents(filename.c_str(), &length);
 	SDL_assert_always((source != nullptr) && (length > 0));
 	if ((!source) || (length == 0)) {
@@ -30,7 +30,8 @@ Shader::Shader(GLenum type, const std::string& filename) :  shaderOk(false), sha
 	}
 
 	shader = glCreateShader(type);
-	glShaderSource(shader, 1, (const GLchar**)&source, &length);
+	Sint32 shader_length = static_cast<Sint32>(length);
+	glShaderSource(shader, 1, (const GLchar**)&source, &shader_length);
 	glCompileShader(shader);
 	SDL_free(source);
 

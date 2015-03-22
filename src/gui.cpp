@@ -205,7 +205,7 @@ void drawUI(NVGcontext *vg, int item, int corners) {
                 drawUIItems(vg,item,corners);
             } break;
             case ST_LABEL: {
-                assert(head);
+                SDL_assert(head);
                 const UIButtonData *data = (UIButtonData*)head;
                 bndLabel(vg,rect.x,rect.y,rect.w,rect.h,
                     data->iconid,data->label);
@@ -883,8 +883,9 @@ bool GuiService::initialise(GuiService* self)
 	uiMakeCurrent(self->uictx);
 	uiSetHandler(ui_handler);
 	self->vg = nvgCreateGL3(NVG_ANTIALIAS);
-    bndSetFont(nvgCreateFont(self->vg, "system", "../DejaVuSans.ttf"));
-    bndSetIconImage(nvgCreateImage(self->vg, "../blender_icons16.png", 0));
+	// TODO : via SDL :-)
+    bndSetFont(nvgCreateFont(self->vg, "system", "DejaVuSans.ttf"));
+    bndSetIconImage(nvgCreateImage(self->vg, "blender_icons16.png", 0));
 	ServiceCheckout<MouseService> maus;
 	ServiceCheckout<KeyboardService> keyb;
 	self->mausObserver = maus->observers.addObserver(std::bind(&GuiService::mouse,self,std::placeholders::_1));
