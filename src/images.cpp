@@ -2,8 +2,8 @@
 #include <iostream>
 #include <memory>
 #include <SDL.h>
-#include <images.h>
 #include <SOIL.h>
+#include <images.h>
 #include <res_path.h>
 
 namespace venk
