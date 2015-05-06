@@ -9,9 +9,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # Set default compile flags for GCC
 if (CMAKE_COMPILER_IS_GNUCXX)
 	message(STATUS "GCC detected, adding compile flags")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++11")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wextra -std=c++11")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -Wall -Wextra -std=c99")
 endif()
+
+find_package(Threads)
 
 
 find_package(SDL2 REQUIRED)
@@ -27,7 +29,7 @@ include_directories(${PHYSFS_INCLUDE_DIRS})
 list(APPEND LIBS ${PHYSFS_LIBRARY})
 
 # Find all the libs that don't require extra parameters
-foreach(lib SOIL OpenGL GLEW)
+foreach(lib OpenGL GLEW)
 	find_package(${lib} REQUIRED)
 	include_directories(${${lib}_INCLUDE_DIRS})
 	list(APPEND LIBS ${${lib}_LIBRARIES})
@@ -41,5 +43,5 @@ file(GLOB Sources src/*.c*)
 #list(APPEND LIBS blendish)
 include_directories(include)
 add_executable(meistravimas ${Sources} ${Includes})
-target_link_libraries(meistravimas ${LIBS})
+target_link_libraries(meistravimas ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 

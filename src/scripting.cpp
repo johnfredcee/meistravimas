@@ -8,7 +8,6 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_net.h>
-#include <SOIL.h>
 #include <res_path.h>
 #include <scheme-defs.h>
 #include <scheme-private.h>

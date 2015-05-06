@@ -56,7 +56,7 @@ private:
 	static const int maxImageNameLength = 63;
 public:
 	Image(const std::string& fileName);
-	Image(const Uint8 *mem, int width, int height, int channels);
+	Image(const Uint8 *mem, Uint32 size);
 	~Image();
 	// return an SDL_Surface that represents the image
 	std::shared_ptr<SDL_Surface> surface() const;

@@ -8,13 +8,12 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_net.h>
-#include <SOIL.h>
 #include <physfs.h>
 #include <res_path.h>
 #include <scheme-defs.h>
 #include <scheme-private.h>
 #include <scheme.h>
-
+#include <stb_image.h>
 #include "hashstring.h"
 #include "locator.h"
 #include "servicecounter.h"
@@ -77,7 +76,7 @@ std::shared_ptr<Image> ImageService::loadImage(const char *filename)
 
 std::shared_ptr<Image> ImageService::makeImage(const char* name, const Uint8* mem, int width, int height, int channels)
 {
-    std::shared_ptr<Image> image = std::make_shared<Image>(mem, height, width, channels);
+    std::shared_ptr<Image> image = std::make_shared<Image>(mem, height * width * channels);
     imageTable.insert(ImageLookupTable_t::value_type(name, image));
     return image;
 }
@@ -104,10 +103,11 @@ std::function<const char*()> ImageService::enumerateImages()
 }
 // -------------------- Image methods --------------------
 
-Image::Image(const Uint8* mem, int width, int height, int channels) : mWidth(width), mHeight(height), mChannels(channels)
+Image::Image(const Uint8* mem, Uint32 size)
 {
-	Sint64 size = width*height;
-	mPixels = SOIL_load_image_from_memory((const unsigned char *)mem, size, &mWidth, &mHeight, &mChannels, SOIL_LOAD_AUTO);
+	SDL_RWops *rwops = SDL_RWFromMem((void*) mem, size);
+	mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 1);
+	SDL_RWclose(rwops);
 	return;
 }
 
@@ -118,36 +118,10 @@ Image::Image(const std::string& fileName) : mPixels(nullptr)
     SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
     if (rwops != nullptr)
     {
-        Sint64 size = SDL_RWsize(rwops);
-        if (size != -1L)
-        {
-            void *buf = SDL_malloc(size);
-            size_t read = SDL_RWread(rwops, buf, 1, size);
-            if (read == size)
-            {
-                mPixels = SOIL_load_image_from_memory((const unsigned char *)buf, size, &mWidth, &mHeight, &mChannels, SOIL_LOAD_AUTO);
-                if (mPixels != nullptr)
-                {
-                    SDL_RWclose(rwops);
-                    return;
-                }
-                else
-                {
-                    std::cerr << "Creating " << fileName << " failed" << std::endl;
-                }
-            }
-            else
-            {
-                std::cerr << "Reading " << fileName << " failed" << std::endl;
-            }
-            SDL_free(buf);
-        }
-        else
-        {
-            std::cerr << "Probing " << fileName << " failed" << std::endl;
-        }
-		SDL_RWclose(rwops);		
-    }
+		mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 1 );
+		SDL_RWclose(rwops);
+		return;
+	}
     else
     {
         std::cerr << "Opening " << fileName << " failed" << std::endl;
@@ -183,7 +157,7 @@ std::shared_ptr<SDL_Surface> Image::surface() const
 Image::~Image()
 {
     if (mPixels != nullptr)
-        SOIL_free_image_data(mPixels);
+		stbi_image_free(mPixels);
 }
 
 // Scheme bindings

@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <SDL.h>
 #include "nanovg.h"
 #include "fontstash.h"
 #include "stb_image.h"

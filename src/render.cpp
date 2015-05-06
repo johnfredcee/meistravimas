@@ -5,7 +5,6 @@
 #include <memory>
 #include <SDL.h>
 #include <SDL_rwops.h>
-#include <SOIL.h>
 #include <images.h>
 #include <res_path.h>
 #include "render.h"

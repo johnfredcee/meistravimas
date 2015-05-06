@@ -11,7 +11,6 @@
 #include <SDL_rwops.h>
 #include <SDL_net.h>
 #include <SDL_thread.h>
-#include <SOIL.h>
 #include <physfs.h>
 #include <scheme-private.h>
 #include <res_path.h>
