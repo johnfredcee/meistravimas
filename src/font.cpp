@@ -9,8 +9,9 @@
 #include <SDL_opengl.h>
 #include <SDL_net.h>
 #include <physfs.h>
+#include <physfsrwops.h>
 #include <res_path.h>
-#include <scheme-defs.h>
+#include <scheme-defs.h>11
 #include <scheme-private.h>
 #include <scheme.h>
 #include <stb_truetype.h>
@@ -45,8 +46,8 @@ bool FontService::shutdown(FontService* self) {
 
 Font::Font(const std::string& fontName) {
 	std::string fullFileName = getResourcePath();
-	fullFileName = fullFileName + "fonts/" + fontName;
-	SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
+	fullFileName =  "fonts/" + fontName;
+	SDL_RWops *rwops =  PHYSFSRWOPS_openRead(fullFileName.c_str());
 	if (rwops != nullptr) {
 		Sint64 size = SDL_RWsize(rwops);
 		if (size != -1L) {
