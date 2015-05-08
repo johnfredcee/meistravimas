@@ -11,7 +11,7 @@
 #include <physfs.h>
 #include <physfsrwops.h>
 #include <res_path.h>
-#include <scheme-defs.h>11
+#include <scheme-defs.h>
 #include <scheme-private.h>
 #include <scheme.h>
 #include <stb_truetype.h>
@@ -45,8 +45,7 @@ bool FontService::shutdown(FontService* self) {
 // -------------------- Font methods --------------------
 
 Font::Font(const std::string& fontName) {
-	std::string fullFileName = getResourcePath();
-	fullFileName =  "fonts/" + fontName;
+	std::string fullFileName =  "fonts/" + fontName;
 	SDL_RWops *rwops =  PHYSFSRWOPS_openRead(fullFileName.c_str());
 	if (rwops != nullptr) {
 		Sint64 size = SDL_RWsize(rwops);
