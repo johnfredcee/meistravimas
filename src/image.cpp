@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -9,6 +8,7 @@
 #include <SDL_opengl.h>
 #include <SDL_net.h>
 #include <physfs.h>
+#include <physfsrwops.h>
 #include <res_path.h>
 #include <scheme-defs.h>
 #include <scheme-private.h>
@@ -106,19 +106,18 @@ std::function<const char*()> ImageService::enumerateImages()
 Image::Image(const Uint8* mem, Uint32 size)
 {
 	SDL_RWops *rwops = SDL_RWFromMem((void*) mem, size);
-	mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 1);
+	mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 4);
 	SDL_RWclose(rwops);
 	return;
 }
 
 Image::Image(const std::string& fileName) : mPixels(nullptr)
 {
-    std::string fullFileName = getResourcePath();
-    fullFileName = fullFileName + "images/" + fileName;
-    SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
+    std::string  fullFileName =  "images/" + fileName;
+    SDL_RWops *rwops = PHYSFSRWOPS_openRead(fullFileName.c_str());
     if (rwops != nullptr)
     {
-		mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 1 );
+		mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 4);
 		SDL_RWclose(rwops);
 		return;
 	}

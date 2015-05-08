@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <SDL.h>
+#include <physfs.h>
+#include <physfsrwops.h>
 #include "nanovg.h"
 #include "fontstash.h"
 #include "stb_image.h"
@@ -708,7 +710,9 @@ int nvgCreateImage(NVGcontext* ctx, const char* filename, int imageFlags)
 	unsigned char* img;
 	stbi_set_unpremultiply_on_load(1);
 	stbi_convert_iphone_png_to_rgb(1);
-	img = stbi_load(filename, &w, &h, &n, 4);
+	SDL_RWops *rwops = PHYSFSRWOPS_openRead(filename);	
+	img = stbi_load_from_rwops(rwops, &w, &h, &n, 4);
+	SDL_RWclose(rwops);
 	if (img == NULL) {
 //		printf("Failed to load %s - %s\n", filename, stbi_failure_reason());
 		return 0;

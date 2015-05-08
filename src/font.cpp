@@ -35,6 +35,7 @@ bool FontService::initialise(FontService* self) {
 }
 
 bool FontService::shutdown(FontService* self) {
+	(void) self;
 	// self->fontTable.clear();
 	return true;
 }

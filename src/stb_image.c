@@ -318,6 +318,7 @@ float *stbi_loadf_main(stbi__context *s, int *x, int *y, int *comp, int req_comp
 }
 
 float *stbi_loadf_from_rwops(SDL_RWops *rw, int len, int *x, int *y, int *comp, int req_comp) {
+	(void) len;
 	stbi__context s;
 	stbi__start_rwops(&s,rw);
 	return stbi_loadf_main(&s,x,y,comp,req_comp);
@@ -2751,7 +2752,7 @@ static stbi_uc *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int 
 				}
 			} else {
 				for (i=0; i < (int) s->img_x; ++i) {
-					stbi__uint32 v = (stbi__uint32) (bpp == 16U ? stbi__get16le(s) : stbi__get32le(s));
+					stbi__uint32 v = (stbi__uint32) (bpp == 16 ? stbi__get16le(s) : stbi__get32le(s));
 					int a;
 					out[z++] = STBI__BYTECAST(stbi__shiftsigned(v & mr, rshift, rcount));
 					out[z++] = STBI__BYTECAST(stbi__shiftsigned(v & mg, gshift, gcount));

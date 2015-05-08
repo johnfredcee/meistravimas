@@ -1,13 +1,14 @@
 
 #include <iostream>
 #include <string>
+#include <physfs.h>
+#include <physfsrwops.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <res_path.h>
 
-namespace venk
-{
-	
+namespace venk {
+
 /*
  * Get the resource path for resources located in res/subDir
  */
@@ -24,14 +25,13 @@ std::string getResourcePath(const std::string &subDir) {
 	//We give it static lifetime so that we'll only need to call
 	//SDL_GetBasePath once to get the executable path
 	static std::string baseRes;
-	if (baseRes.empty()){
+	if(baseRes.empty()) {
 		//SDL_GetBasePath will return NULL if something went wrong in retrieving the path
 		char *basePath = SDL_GetBasePath();
-		if (basePath){
+		if(basePath) {
 			baseRes = basePath;
 			SDL_free(basePath);
-		}
-		else {
+		} else {
 			std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
 			return "";
 		}
@@ -40,21 +40,20 @@ std::string getResourcePath(const std::string &subDir) {
 		baseRes = baseRes.substr(0, pos) + "res" + PATH_SEP;
 	}
 	//If we want a specific subdirectory path in the resource directory
-	//append it to the base path. 
+	//append it to the base path.
 	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
 }
 
-char *file_contents(const std::string& fileName, Uint64 *length)
-{
+char *file_contents(const std::string& fileName, Uint64 *length) {
 	std::string fullFileName = getResourcePath();
 	fullFileName = fullFileName + fileName;
-	SDL_RWops *rwops = SDL_RWFromFile(fullFileName.c_str(), "rb");
-	if (rwops != nullptr) {
+	SDL_RWops *rwops = PHYSFSRWOPS_openRead(fullFileName.c_str());
+	if(rwops != nullptr) {
 		Sint64 size = SDL_RWsize(rwops);
-		if (size != -1L) {
+		if(size != -1L) {
 			void* buf = SDL_malloc(size+1);
 			size_t read = SDL_RWread(rwops, buf, 1, size);
-			if (read == size) {
+			if(read == size) {
 				*(((char*)buf) + size) = '\0';
 				*length = static_cast<Sint32>(size);
 				return (char*) buf;
@@ -86,13 +85,12 @@ extern "C"
 		std::string path(type);
 		path += std::string("/");
 		path += std::string(name);
-		path = venk::getResourcePath() + path;
-		return SDL_RWFromFile(path.c_str(), "rb");		
+		return SDL_RWFromFile(path.c_str(), "rb");
 	}
 
 	void closeresource(SDL_RWops* resource) {
 		resource->close(resource);
 	}
-
 }
-			
+
+

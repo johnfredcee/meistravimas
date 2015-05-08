@@ -611,7 +611,8 @@ float stbtt_ScaleForMappingEmToPixels(const stbtt_fontinfo *info, float pixels)
 
 void stbtt_FreeShape(const stbtt_fontinfo *info, stbtt_vertex *v)
 {
-   STBTT_free(v, info->userdata);
+	(void) info;
+	STBTT_free(v, info->userdata);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1004,7 +1005,8 @@ void stbtt_Rasterize(stbtt__bitmap *result, float flatness_in_pixels, stbtt_vert
 
 void stbtt_FreeBitmap(unsigned char *bitmap, void *userdata)
 {
-   STBTT_free(bitmap, userdata);
+	(void) userdata;
+	STBTT_free(bitmap, userdata);
 }
 
 unsigned char *stbtt_GetGlyphBitmapSubpixel(const stbtt_fontinfo *info, float scale_x, float scale_y, float shift_x, float shift_y, int glyph, int *width, int *height, int *xoff, int *yoff)

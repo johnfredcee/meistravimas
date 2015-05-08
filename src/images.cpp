@@ -2,6 +2,8 @@
 #include <iostream>
 #include <memory>
 #include <SDL.h>
+#include <physfs.h>
+#include <physfsrwops.h>
 #include <stb_image.h>
 #include <images.h>
 #include <res_path.h>
@@ -18,9 +20,9 @@ namespace venk
 			}
 		};
 		std::shared_ptr<Image> img(new Image, image_deleter);
-		SDL_RWops *rwops = SDL_RWFromFile(fileName.c_str(), "rb");
+		SDL_RWops *rwops = PHYSFSRWOPS_openRead(fileName.c_str());
 		if (rwops != nullptr) {
-			img->pixels = stbi_load_from_rwops(rwops, &img->width, &img->height, &img->channels, 1);
+			img->pixels = stbi_load_from_rwops(rwops, &img->width, &img->height, &img->channels, 4);
 		}
 		SDL_RWclose(rwops);
 		return img;
