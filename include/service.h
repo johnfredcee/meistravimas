@@ -37,7 +37,9 @@ namespace venk
 						SDL_assert(instance != NULL);
 						ServiceCounter::serviceCount++;
 						T::serviceName = ServiceCounter::serviceCount;
+#ifndef NDEBUG						
 						T::useCount = 0;
+#endif						
 					}
 
 				return instance;
@@ -45,7 +47,9 @@ namespace venk
 
 			static void destroy()
 			{
+#ifndef NDEBUG				
 				SDL_assert(useCount == 0);
+#endif				
 				T::shutdown(instance);
 				if (instance) {
 					delete instance;
@@ -71,9 +75,10 @@ namespace venk
 	template<class T>
 		Locator::ServiceName_t Service<T>::serviceName = ServiceCounter::NO_SERVICE;
 
-
+#ifndef NDEBUG
 	template<class T>
 		Uint32 Service<T>::useCount  = 0;
+#endif
 
 }
 

@@ -22,8 +22,10 @@ namespace venk
 			// Construct this object to checkout a service
 			ServiceCheckout() {
 				SDL_assert(Locator::servicePtrs.find(T::serviceName) != Locator::servicePtrs.end());
-				instance = Service<T>::instance;				
+				instance = Service<T>::instance;
+#ifndef NDEBUG				
 				instance->useCount++;
+#endif				
 				status = IN_USE;
 			}
 	
@@ -37,7 +39,9 @@ namespace venk
 			// destructor ensures checkout when we go out of scope
 			~ServiceCheckout<T>() {
 				if (status != CHECKED_IN) {
+#ifndef NDEBUG
 					instance->useCount--;
+#endif				  
 					status = CHECKED_IN;
 				}
 			}
