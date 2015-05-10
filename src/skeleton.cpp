@@ -332,12 +332,14 @@ int main(int argc, char **argv) {
 				ServiceRegistry<ImageService>::initialise();
 				ServiceCheckout<ImageService> images;
 				std::shared_ptr<Image> img(images->loadImage("test.tga"));
-				if(img) {
+				if (img) {
 					ServiceRegistry<TextureService>::initialise();
 					ServiceRegistry<ProgramService>::initialise();
 					ServiceRegistry<BufferManagerService>::initialise();
 					ServiceRegistry<RenderStateService>::initialise();
+#ifdef USE_GUI					
 					ServiceRegistry<GuiService>::initialise();
+#endif					
 					{
 						ServiceCheckout<TextureService> textures;
 						textures->setRenderer(renderer);
@@ -389,10 +391,12 @@ int main(int argc, char **argv) {
 								SDL_SemWait(global_lock);												 
 								
 								render(1.0 - alpha, window.get(), renderer.get(), tex.get(), simple.get(), buffers);
+#ifdef USE_GUI								
 								{
 									ServiceCheckout<GuiService> gui;
 									gui->render();
 								}
+#endif								
 								SDL_GL_SwapWindow(window.get());
 								
 								SDL_SemPost(global_lock);
@@ -444,7 +448,9 @@ int main(int argc, char **argv) {
 							std::cerr << "Creating texture failed" << std::endl;
 						}
 					}
+#ifdef USE_GUI					
 					ServiceRegistry<GuiService>::shutdown();
+#endif			
 					ServiceRegistry<RenderStateService>::shutdown();
 					ServiceRegistry<BufferManagerService>::shutdown();
 					ServiceRegistry<ProgramService>::shutdown();

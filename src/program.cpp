@@ -162,6 +162,7 @@ Program::Program(std::shared_ptr<Shader> vertexShader, std::shared_ptr<Shader> f
 		SDL_assert(glGetError() == GL_NO_ERROR);
 		glGetProgramiv(program, GL_LINK_STATUS, &programOk);
 		show_info_log(program, glGetProgramiv, glGetProgramInfoLog);
+		SDL_assert(programOk == GL_TRUE);
 		if (programOk != GL_TRUE) {
 			std::cerr << "Failed to link shader program." << std::endl;
 			glDeleteProgram(program);

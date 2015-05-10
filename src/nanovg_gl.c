@@ -356,6 +356,7 @@ static int glnvg__createShader(GLNVGshader* shader, const char* name, const char
 
 	glLinkProgram(prog);
 	glGetProgramiv(prog, GL_LINK_STATUS, &status);
+	SDL_assert(status == GL_TRUE);
 	if (status != GL_TRUE) {
 		glnvg__dumpProgramError(prog, name);
 		return 0;
