@@ -882,7 +882,7 @@ bool GuiService::initialise(GuiService* self)
 	self->uictx = uiCreateContext(4096, 1<<20);
 	uiMakeCurrent(self->uictx);
 	uiSetHandler(ui_handler);
-	self->vg = nvgCreateGL3(NVG_ANTIALIAS);
+	self->vg = nvgCreateGL2(NVG_ANTIALIAS);
 	// TODO : via SDL :-)
     bndSetFont(nvgCreateFont(self->vg, "system", "DejaVuSans.ttf"));
     bndSetIconImage(nvgCreateImage(self->vg, "blender_icons16.png", 0));
@@ -899,7 +899,7 @@ bool GuiService::shutdown(GuiService* self)
 	ServiceCheckout<KeyboardService> keyb;
 	maus->observers.removeObserver(self->mausObserver);
 	keyb->observers.removeObserver(self->keybObserver);
-	nvgDeleteGL3(self->vg);
+	nvgDeleteGL2(self->vg);
 	uiDestroyContext(self->uictx);
 	return true;
 }
