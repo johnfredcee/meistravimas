@@ -45,26 +45,25 @@ std::string getResourcePath(const std::string &subDir) {
 }
 
 char *file_contents(const std::string& fileName, Uint64 *length) {
-	std::string fullFileName = getResourcePath();
-	fullFileName = fullFileName + fileName;
-	SDL_RWops *rwops = PHYSFSRWOPS_openRead(fullFileName.c_str());
+	SDL_RWops *rwops = PHYSFSRWOPS_openRead(fileName.c_str());
 	if(rwops != nullptr) {
 		Sint64 size = SDL_RWsize(rwops);
 		if(size != -1L) {
 			void* buf = SDL_malloc(size+1);
 			size_t read = SDL_RWread(rwops, buf, 1, size);
+			SDL_RWclose(rwops);
 			if(read == size) {
 				*(((char*)buf) + size) = '\0';
 				*length = static_cast<Sint32>(size);
 				return (char*) buf;
 			} else {
-				std::cerr << "Failed to read " << fullFileName << std::endl;
+				std::cerr << "Failed to read " << fileName << std::endl;
 			}
 		} else {
-			std::cerr << "Failed to read " << fullFileName << std::endl;
+			std::cerr << "Failed to read " << fileName << std::endl;
 		}
 	} else {
-		std::cerr << "Failed to open " << fullFileName << std::endl;
+		std::cerr << "Failed to open " << fileName << std::endl;
 	}
 	return (GLchar*) nullptr;
 }
@@ -85,12 +84,14 @@ extern "C"
 		std::string path(type);
 		path += std::string("/");
 		path += std::string(name);
-		return SDL_RWFromFile(path.c_str(), "rb");
+		return PHYSFSRWOPS_openRead(path.c_str());
 	}
 
-	void closeresource(SDL_RWops* resource) {
-		resource->close(resource);
+	void close_resource(SDL_RWops* resource) {
+		SDL_RWclose(resource);
 	}
 }
+
+
 
 

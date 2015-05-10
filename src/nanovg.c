@@ -21,6 +21,7 @@
 #include <SDL.h>
 #include <physfs.h>
 #include <physfsrwops.h>
+#include "res_path.h"
 #include "nanovg.h"
 #include "fontstash.h"
 #include "stb_image.h"
@@ -710,13 +711,10 @@ int nvgCreateImage(NVGcontext* ctx, const char* filename, int imageFlags)
 	unsigned char* img;
 	stbi_set_unpremultiply_on_load(1);
 	stbi_convert_iphone_png_to_rgb(1);
-	SDL_RWops *rwops = PHYSFSRWOPS_openRead(filename);	
+	SDL_RWops *rwops = open_resource("image", filename);
+	SDL_assert(rwops != NULL);
 	img = stbi_load_from_rwops(rwops, &w, &h, &n, 4);
 	SDL_RWclose(rwops);
-	if (img == NULL) {
-//		printf("Failed to load %s - %s\n", filename, stbi_failure_reason());
-		return 0;
-	}
 	image = nvgCreateImageRGBA(ctx, w, h, imageFlags, img);
 	stbi_image_free(img);
 	return image;
@@ -726,10 +724,7 @@ int nvgCreateImageMem(NVGcontext* ctx, int imageFlags, unsigned char* data, int 
 {
 	int w, h, n, image;
 	unsigned char* img = stbi_load_from_memory(data, ndata, &w, &h, &n, 4);
-	if (img == NULL) {
-//		printf("Failed to load %s - %s\n", filename, stbi_failure_reason());
-		return 0;
-	}
+	SDL_assert(img != NULL);
 	image = nvgCreateImageRGBA(ctx, w, h, imageFlags, img);
 	stbi_image_free(img);
 	return image;

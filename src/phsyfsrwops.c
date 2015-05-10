@@ -23,10 +23,24 @@
 #include <stdio.h>  /* used for SEEK_SET, SEEK_CUR, SEEK_END ... */
 #include "physfsrwops.h"
 
-static int physfsrwops_seek(SDL_RWops *rw, int offset, int whence)
+Sint64 (SDLCALL * size) (struct SDL_RWops * context);
+
+static Sint64 physfsrwops_size(SDL_RWops *rw)
 {
     PHYSFS_File *handle = (PHYSFS_File *) rw->hidden.unknown.data1;
-    int pos = 0;
+    PHYSFS_sint64 len = PHYSFS_fileLength(handle);
+	if (len == -1)
+	{
+		SDL_SetError("Can't find end of file: %s", PHYSFS_getLastError());
+		return(-1);
+	} /* if */
+	return len;
+}
+
+static Sint64 physfsrwops_seek(SDL_RWops *rw, Sint64 offset, int whence)
+{
+    PHYSFS_File *handle = (PHYSFS_File *) rw->hidden.unknown.data1;
+    Sint64 pos = 0;
 
     if (whence == SEEK_SET)
     {
@@ -97,7 +111,7 @@ static int physfsrwops_seek(SDL_RWops *rw, int offset, int whence)
 } /* physfsrwops_seek */
 
 
-static int physfsrwops_read(SDL_RWops *rw, void *ptr, int size, int maxnum)
+static size_t physfsrwops_read(SDL_RWops *rw, void *ptr, size_t size, size_t maxnum)
 {
     PHYSFS_File *handle = (PHYSFS_File *) rw->hidden.unknown.data1;
     PHYSFS_sint64 rc = PHYSFS_read(handle, ptr, size, maxnum);
@@ -111,14 +125,14 @@ static int physfsrwops_read(SDL_RWops *rw, void *ptr, int size, int maxnum)
 } /* physfsrwops_read */
 
 
-static int physfsrwops_write(SDL_RWops *rw, const void *ptr, int size, int num)
+static size_t physfsrwops_write(SDL_RWops *rw, const void *ptr, size_t size, size_t num)
 {
     PHYSFS_File *handle = (PHYSFS_File *) rw->hidden.unknown.data1;
     PHYSFS_sint64 rc = PHYSFS_write(handle, ptr, size, num);
     if (rc != num)
         SDL_SetError("PhysicsFS error: %s", PHYSFS_getLastError());
 
-    return((int) rc);
+    return((size_t) rc);
 } /* physfsrwops_write */
 
 
@@ -147,6 +161,7 @@ static SDL_RWops *create_rwops(PHYSFS_File *handle)
         retval = SDL_AllocRW();
         if (retval != NULL)
         {
+			retval->size  = physfsrwops_size;
             retval->seek  = physfsrwops_seek;
             retval->read  = physfsrwops_read;
             retval->write = physfsrwops_write;

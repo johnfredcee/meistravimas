@@ -165,6 +165,8 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	(void) renderer;
 	(void) alpha;
 	(void) texture;
+	(void) window;
+	
 	// perspective view - fairly generous 45.0f fov
 	Matrix44 projection;
 	projection.persp(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
@@ -199,30 +201,61 @@ void update(double t, double dt) {
 	(void) dt;
 }
 
+void *malloc_shim(PHYSFS_uint64 size) {
+	return SDL_malloc((size_t) size);
+}
 
-int main(int argc, char **argv) {
-	(void) argc;
-	(void) argv;
+void *realloc_shim(void *mem, PHYSFS_uint64 size) {
+	return SDL_realloc(mem, (size_t) size);
+}
+
+int initPhysfs(char **argv)
+{
+	PHYSFS_Allocator sdlAllocator;
+	sdlAllocator.Init = nullptr;
+	sdlAllocator.Deinit = nullptr;
+	sdlAllocator.Malloc = malloc_shim;
+	sdlAllocator.Realloc = realloc_shim;
+	sdlAllocator.Free = SDL_free;
 	int physfsok = PHYSFS_init(argv[0]);
 	if(!physfsok) {
 		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
+		return physfsok;
 	}
-	if(SDLNet_Init() < 0) {
-		std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
-		return -1;
+	PHYSFS_setAllocator(&sdlAllocator);
+	physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
+	if(!physfsok) {
+		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
+		return physfsok;
 	}
-	ServiceRegistry<ScriptingService>::initialise();
-	if (argc > 1) {
-		ServiceCheckout<ScriptingService> scripting;		
-		for(int i = 0; i < argc-1; i++) {
-			scripting->load(argv[i-1]);
-		}
+	std::cout << "Resource path is: " << getResourcePath() << std::endl;
+	physfsok = PHYSFS_addToSearchPath(getResourcePath().c_str(), 1);
+	if(!physfsok) {
+		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
 	}
+	return physfsok;
+}
+
+int main(int argc, char **argv) {
+	
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
 	} else {
-
+		(void) argc;
+		(void) argv;
+		if(SDLNet_Init() < 0) {
+			std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
+			return -1;
+		}
+		initPhysfs(argv);
+		ServiceRegistry<ScriptingService>::initialise();
+		if (argc > 1) {
+			ServiceCheckout<ScriptingService> scripting;		
+			for(int i = 0; i < argc-1; i++) {
+				scripting->load(argv[i-1]);
+			}
+		}
 		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -231,22 +264,8 @@ int main(int argc, char **argv) {
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		
-		int physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
-		if(!physfsok) {
-			std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
-		}
-		std::cout << "Resource path is: " << getResourcePath() << std::endl;
-		physfsok = PHYSFS_addToSearchPath(getResourcePath().c_str(), 1);
-		if(!physfsok) {
-			std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
-		}
-		std::cout << "Dir listing.." << std::endl;
-		char** flist = PHYSFS_enumerateFiles("images");
-		for(char** i = flist; *i != nullptr; i++)
-			std::cout << *i << std::endl;
-		std::cout << "=============" << std::endl;
-		PHYSFS_freeList(flist);
-
+	
+	
 		// create window
 		auto window_deleter = [](SDL_Window *w) {
 			if(w) SDL_DestroyWindow(w);
