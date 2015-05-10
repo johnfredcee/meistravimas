@@ -81,10 +81,13 @@ extern "C"
 	}
 
 	SDL_RWops* open_resource(const char* type, const char* name) {
+		SDL_RWops* result = NULL;
 		std::string path(type);
 		path += std::string("/");
 		path += std::string(name);
-		return PHYSFSRWOPS_openRead(path.c_str());
+		result = PHYSFSRWOPS_openRead(path.c_str());
+		SDL_assert(result != NULL);
+		return result;
 	}
 
 	void close_resource(SDL_RWops* resource) {

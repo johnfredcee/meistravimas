@@ -118,6 +118,7 @@ Image::Image(const std::string& fileName) : mPixels(nullptr)
     if (rwops != nullptr)
     {
 		mPixels = stbi_load_from_rwops(rwops, &mWidth, &mHeight, &mChannels, 4);
+		SDL_assert(mPixels != nullptr);
 		SDL_RWclose(rwops);
 		return;
 	}

@@ -100,31 +100,26 @@ static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *
 
 #ifndef STBI_NO_STDIO
 
-static int stbi__stdio_read(void *user, char *data, int size)
-{
-   return (int) fread(data,1,size,(FILE*) user);
+static int stbi__stdio_read(void *user, char *data, int size) {
+	return (int) fread(data,1,size,(FILE*) user);
 }
 
-static void stbi__stdio_skip(void *user, int n)
-{
-   fseek((FILE*) user, n, SEEK_CUR);
+static void stbi__stdio_skip(void *user, int n) {
+	fseek((FILE*) user, n, SEEK_CUR);
 }
 
-static int stbi__stdio_eof(void *user)
-{
-   return feof((FILE*) user);
+static int stbi__stdio_eof(void *user) {
+	return feof((FILE*) user);
 }
 
-static stbi_io_callbacks stbi__stdio_callbacks =
-{
-   stbi__stdio_read,
-   stbi__stdio_skip,
-   stbi__stdio_eof,
+static stbi_io_callbacks stbi__stdio_callbacks = {
+	stbi__stdio_read,
+	stbi__stdio_skip,
+	stbi__stdio_eof,
 };
 
-static void stbi__start_file(stbi__context *s, FILE *f)
-{
-   stbi__start_callbacks(s, &stbi__stdio_callbacks, (void *) f);
+static void stbi__start_file(stbi__context *s, FILE *f) {
+	stbi__start_callbacks(s, &stbi__stdio_callbacks, (void *) f);
 }
 
 //static void stop_file(stbi__context *s) { }
@@ -255,27 +250,25 @@ static unsigned char *stbi_load_main(stbi__context *s, int *x, int *y, int *comp
 
 
 #ifndef STBI_NO_STDIO
-STBIDEF unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp)
-{
-   FILE *f = fopen(filename, "rb");
-   unsigned char *result;
-   if (!f) return stbi__errpuc("can't fopen", "Unable to open file");
-   result = stbi_load_from_file(f,x,y,comp,req_comp);
-   fclose(f);
-   return result;
+STBIDEF unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp) {
+	FILE *f = fopen(filename, "rb");
+	unsigned char *result;
+	if (!f) return stbi__errpuc("can't fopen", "Unable to open file");
+	result = stbi_load_from_file(f,x,y,comp,req_comp);
+	fclose(f);
+	return result;
 }
 
-STBIDEF unsigned char *stbi_load_from_file(FILE *f, int *x, int *y, int *comp, int req_comp)
-{
-   unsigned char *result;
-   stbi__context s;
-   stbi__start_file(&s,f);
-   result = stbi_load_main(&s,x,y,comp,req_comp);
-   if (result) {
-      // need to 'unget' all the characters in the IO buffer
-      fseek(f, - (int) (s.img_buffer_end - s.img_buffer), SEEK_CUR);
-   }
-   return result;
+STBIDEF unsigned char *stbi_load_from_file(FILE *f, int *x, int *y, int *comp, int req_comp) {
+	unsigned char *result;
+	stbi__context s;
+	stbi__start_file(&s,f);
+	result = stbi_load_main(&s,x,y,comp,req_comp);
+	if (result) {
+		// need to 'unget' all the characters in the IO buffer
+		fseek(f, - (int) (s.img_buffer_end - s.img_buffer), SEEK_CUR);
+	}
+	return result;
 }
 #endif //!STBI_NO_STDIO
 
