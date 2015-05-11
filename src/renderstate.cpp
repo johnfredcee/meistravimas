@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <iostream>
+#include <vector>
 #include <memory>
 #include "hashstring.h"
 #include "locator.h"
@@ -19,56 +20,47 @@
 #include "program.h"
 #include "renderstate.h"
 
-namespace venk
-{
+namespace venk {
 
-	bool RenderStateService::initialise(RenderStateService* self)
-	{
-		self->mState.reserve(256);		
-		return true;
+bool RenderStateService::initialise(RenderStateService* self) {
+	self->mState.reserve(256);
+	return true;
+}
+
+bool RenderStateService::shutdown(RenderStateService* self) {
+	(void) self;
+	return true;
+}
+
+void RenderStateService::set(const std::string& name, const RenderParameter& param) {
+	auto it = mState.find(name);
+	if(it == mState.end()) {
+		mState.emplace(name, param);
+	} else {
+		mState.insert(it, std::make_pair(name, param));
 	}
+}
 
-	bool RenderStateService::shutdown(RenderStateService* self)
-	{
-		(void) self;
-		return true;
-	}
+const RenderParameter& RenderStateService::operator[](const std::string& name) const {
+	auto it = mState.find(name);
+	SDL_assert(it != mState.end());
+	return it->second;
+}
 
-	void RenderStateService::set(const std::string& name, const RenderParameter& param)
-	{
-		auto it = mState.find(name);
-		if (it == mState.end()) {
-			mState.emplace(name, param);
-		} else {
-			mState.insert(it, std::make_pair(name, param));
-		}
-	}
+void RenderStateService::remove(const std::string& name) {
+	SDL_assert(exists(name));
+	mState.erase(name);
+}
 
-	const RenderParameter& RenderStateService::operator[](const std::string& name) const
-	{
-		auto it = mState.find(name);
-		SDL_assert(it != mState.end());
-		return it->second;
-	}
+bool RenderStateService::exists(const std::string& name) const {
+	return mState.find(name) != mState.end();
+}
 
-	void RenderStateService::remove(const std::string& name)
-	{
-		SDL_assert(exists(name));
-		mState.erase(name);
-	}
-
-	bool RenderStateService::exists(const std::string& name) const
-	{
-		return mState.find(name) != mState.end();
-	}
-
-	/** bind to uniform of program */
-	void RenderStateService::uniform(const std::string& name, Program* program, Sint32 uniform)
-	{
-		SDL_assert(exists(name));
-		auto it = mState.find(name);
-		switch (it->second.type)
-		{
+/** bind to uniform of program */
+void RenderStateService::uniform(const std::string& name, Program* program, Sint32 uniform) {
+	SDL_assert(exists(name));
+	auto it = mState.find(name);
+	switch(it->second.type) {
 		case eFLOAT:
 			program->setUniform1f(uniform, &(it->second.value.f));
 			break;
@@ -86,15 +78,26 @@ namespace venk
 			break;
 		case eMAT4:
 			program->setUniformMat4f(uniform, &(it->second.value.mat4[0]));
-			break;				
+			break;
+	}
+}
+
+/** bind to uniform of program */
+void RenderStateService::uniform(const std::string& name, Program* program, const std::string& uniform) {
+	Sint32 loc = program->getUniformLocation(uniform);
+	this->uniform(name, program, loc);
+}
+
+void RenderStateService::setProgramState(Program* program) {
+	std::vector<std::string> uniforms;
+	program->getUniformList(uniforms);
+	// TODO -- this does the search twice, not good
+	for( auto uniform = uniforms.begin(); uniform != uniforms.end(); ++uniform) {
+		if (this->exists(*uniform)) {
+			this->uniform(*uniform, program, *uniform);
 		}
 	}
-
-	/** bind to uniform of program */
-	void RenderStateService::uniform(const std::string& name, Program* program, const std::string& uniform)
-	{
-		Sint32 loc = program->getUniformLocation(uniform);
-		this->uniform(name, program, loc);
-	}
+}
 
 }
+

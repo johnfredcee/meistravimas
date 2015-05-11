@@ -36,6 +36,11 @@ public:
      */
     std::shared_ptr<Program> getProgram(const std::string& name) const;
 
+	/**
+     * return the name of the program currently in use
+     */
+	std::string currentProgram() const;
+	
     /**
      * check to see if a program exists
      */
@@ -51,14 +56,18 @@ private:
     };
 
     typedef std::unordered_map<std::string, ProgramTableEntry>  ProgramLookupTable_t;
+    typedef std::unordered_map<Sint32, std::string >    ProgramIndexTable_t;
 
     const char *computeName(const char *name);
 
     ProgramLookupTable_t programTable;
+	ProgramIndexTable_t  programIndex;
 };
 
 class Program
 {
+	friend class ProgramService;
+	
 public:
     static const int maxUniforms   = 64;
     static const int maxAttributes = 16;
@@ -97,12 +106,13 @@ public:
     // attribute related
     Sint32 getAttributeCount() const;
     Sint32 getAttributeLocation(const std::string& name);
-
+	void getAttributeList(std::vector<std::string>& uniforms);
 
     // uniform related
     Sint32 getUniformLocation(const std::string& name) const;
 	Sint32 operator[](const std::string& name) const;
-
+	void getUniformList(std::vector<std::string>& uniform_list);
+	
 	void  setUniform1f(const std::string& name, const GLfloat *vec);
     void  setUniform2f(const std::string& name, const GLfloat *vec);
     void  setUniform3f(const std::string& name, const GLfloat *vec);
@@ -110,7 +120,7 @@ public:
     void  setUniformMat3f(const std::string& name, const GLfloat *mat3);
     void  setUniformMat4f(const std::string& name, const GLfloat *mat4);
     void  setUniformSampler(const std::string& name, Sint32 textureUnit, Texture *texture);
-
+	
     void  setUniform1f(Sint32 location, const GLfloat *vec);
     void  setUniform2f(Sint32 location, const GLfloat *vec);
     void  setUniform3f(Sint32 location, const GLfloat *vec);

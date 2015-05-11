@@ -7,7 +7,7 @@
 #include <iostream>
 #include <memory>
 
-
+#include <vector>
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
@@ -57,6 +57,7 @@ bool ProgramService::initialise(ProgramService* self)
 	return true;
 }
 
+
 bool ProgramService::shutdown(ProgramService* self)
 {
 	// unload all programs: smart pointer should handle it
@@ -84,7 +85,19 @@ std::shared_ptr<Program> ProgramService::loadProgram(const std::string& name)
 	std::string progname(computeName(name.c_str()));
 	std::cerr << "Created program named " << progname.c_str() << std::endl;
 	programTable.insert(ProgramLookupTable_t::value_type(progname, info));
+	programIndex.insert(ProgramIndexTable_t::value_type(info.prog->program,progname));
 	return info.prog;
+}
+
+std::string ProgramService::currentProgram() const
+{
+	Sint32 used;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &used);
+	auto result = programIndex.find(used);
+	if (result == programIndex.end()) {
+		return "None";
+	} 
+	return result->second;
 }
 
 bool ProgramService::programExists(const std::string& name) const
@@ -119,8 +132,6 @@ std::shared_ptr<Program> ProgramService::getProgram(const std::string& name) con
 
 Program::Program(std::shared_ptr<Shader> vertexShader, std::shared_ptr<Shader> fragmentShader) : programOk(0), program(0)
 {
-
-
 	SDL_assert(vertexShader && fragmentShader);
 	if (vertexShader && fragmentShader) {
 		program = glCreateProgram();
@@ -264,6 +275,13 @@ Sint32 Program::getUniformLocation(const std::string& name) const
 	return it->second.location;
 }
 
+void Program::getUniformList(std::vector<std::string>& uniform_list)
+{
+	for(auto i = uniforms.begin(); i != uniforms.end(); ++i) {
+		uniform_list.push_back(i->first);
+	}
+}
+
 Sint32 Program::operator[](const std::string& name) const
 {
 	auto it = uniforms.find(name);
@@ -373,6 +391,13 @@ Sint32 Program::getAttributeLocation(const std::string& name)
 	AttributeDictionaryT::iterator it = attributes.find(std::string(name));
 	SDL_assert(it != attributes.end());
 	return it->second.location;
+}
+
+void Program::getAttributeList(std::vector<std::string>& attribute_list)
+{
+	for(auto i = attributes.begin(); i != attributes.end(); ++i) {
+		attribute_list.push_back(i->first);
+	}
 }
 
 Sint32 Program::getAttributeCount() const

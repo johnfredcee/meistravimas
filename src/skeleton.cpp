@@ -51,6 +51,8 @@
 #include "gui.h"
 
 
+bool	quit = false;
+
 using namespace venk;
 
 const int screen_width  = 640;
@@ -178,7 +180,9 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer, Texture* t
 	view.lookAt(eyePos, eyeTarget);
 	//view.identity();
 	// Clear the color and depth buffers
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	// Set the clear color for when we re-draw the scene
+	glClearColor(0.1, 0.1, 0.6, 1.0);	
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	simple->use();
 	// texture->select();
 	// simple->setUniformSampler("textureMap", 0, texture);
@@ -250,6 +254,7 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 		initPhysfs(argv);
+#ifdef WITH_SCRIPTING		
 		ServiceRegistry<ScriptingService>::initialise();
 		if (argc > 1) {
 			ServiceCheckout<ScriptingService> scripting;		
@@ -257,6 +262,7 @@ int main(int argc, char **argv) {
 				scripting->load(argv[i-1]);
 			}
 		}
+#endif	   
 		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -326,8 +332,6 @@ int main(int argc, char **argv) {
 				// Enable depth testing
 				glEnable(GL_DEPTH_TEST);
 				glDepthFunc(GL_LEQUAL);
-				// Set the clear color for when we re-draw the scene
-				glClearColor(0.1, 0.1, 0.6, 1.0);
 				glViewport(0, 0, screen_width, screen_height);
 				SDL_assert(glGetError() == GL_NO_ERROR);
 				ServiceRegistry<ImageService>::initialise();
@@ -371,7 +375,6 @@ int main(int argc, char **argv) {
 							double  dt   = 0.01;
 							double currentTime = timeNow();
 							double accumulator = dt;
-							bool	quit = false;
 							global_lock = SDL_CreateSemaphore( 1 );
 							SDL_Event e;
 							while(!quit) {
@@ -438,8 +441,7 @@ int main(int argc, char **argv) {
 											SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
 											break;
 									}
-								}
-																						
+								}																						
 							}
 							if (global_lock != nullptr) {
 								SDL_DestroySemaphore(global_lock);
@@ -468,7 +470,9 @@ int main(int argc, char **argv) {
 			ServiceRegistry<MouseService>::shutdown();			
 		}
 	}
+#ifdef WITH_SCRIPTING	
 	ServiceRegistry<ScriptingService>::shutdown();
+#endif	
 	SDLNet_Quit();
 	int phsyfhshutdown = PHYSFS_deinit();
 	if(!phsyfhshutdown) {

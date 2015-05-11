@@ -73,6 +73,8 @@ public:
 
 };
 
+/** This class exists to be a simple database of parameters for the renderer
+    it matches parameters to shader uniforms as needed **/
 
 class RenderStateService : public Service<RenderStateService>
 {
@@ -85,13 +87,13 @@ private:
 
 public:
     /**
-     * Initialse the image subsystem
+     * Initialse the render state subsystem
      * @return true if successful
      */
     static bool initialise(RenderStateService* self);
 
     /**
-     * Shutdown the image subsystem.
+     * Shutdown the render state subsystem.
      * @return returns true if successful
      */
     static bool shutdown(RenderStateService* self);
@@ -113,6 +115,10 @@ public:
 
 	/** bind to uniform of program */
 	void uniform(const std::string& name, Program* program, const std::string& uniform);
+
+	/** bind parameters to the uniforms of a program */
+	void setProgramState(Program* program);
+	
 };
 
 }
