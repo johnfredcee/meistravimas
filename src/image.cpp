@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <memory>
 #include <iostream>
+#include <functional>
 #include <cctype>
 #include <SDL.h>
 #include <SDL_opengl.h>

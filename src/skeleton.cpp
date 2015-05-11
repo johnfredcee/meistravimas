@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
+#include <array>
 #include <string>
 #include <functional>
 #include <memory>

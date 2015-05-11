@@ -23,6 +23,12 @@
 namespace venk
 {
 
+void show_info_log(GLuint object,
+				   PFNGLGETSHADERIVPROC glGet__iv,
+				   PFNGLGETSHADERINFOLOGPROC glGet__InfoLog);
+
+GLenum show_gl_error(GLenum error);
+	
 size_t strnlen (const char *string, size_t maxlen)
 {
 	const char *end = (const char *) memchr (string, '\0', maxlen);
@@ -113,9 +119,6 @@ std::shared_ptr<Program> ProgramService::getProgram(const std::string& name) con
 
 Program::Program(std::shared_ptr<Shader> vertexShader, std::shared_ptr<Shader> fragmentShader) : programOk(0), program(0)
 {
-	extern void show_info_log(GLuint object,
-	                          PFNGLGETSHADERIVPROC glGet__iv,
-	                          PFNGLGETSHADERINFOLOGPROC glGet__InfoLog);
 
 
 	SDL_assert(vertexShader && fragmentShader);
@@ -235,7 +238,6 @@ bool Program::isValid() const
 
 void Program::use() const
 {
-	extern GLenum show_gl_error(GLenum error);
 	SDL_assert(glIsProgram(program)  == GL_TRUE);
 	glUseProgram(program);
 	SDL_assert(show_gl_error(glGetError()) == GL_NO_ERROR);

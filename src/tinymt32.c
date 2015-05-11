@@ -18,6 +18,201 @@
 #define MIN_LOOP 8
 #define PRE_LOOP 8
 
+#if defined(__GNUC__)
+/**
+ * This function always returns 127
+ * @param random not used
+ * @return always 127
+ */
+inline static int tinymt32_get_mexp(
+    tinymt32_t * random  __attribute__((unused))) {
+    return TINYMT32_MEXP;
+}
+#else
+static int tinymt32_get_mexp(tinymt32_t * random) {
+    return TINYMT32_MEXP;
+}
+#endif
+
+
+/**
+ * This function changes internal state of tinymt32.
+ * Users should not call this function directly.
+ * @param random tinymt internal status
+ */
+ static void tinymt32_next_state(tinymt32_t * random) {
+    Uint32 x;
+    Uint32 y;
+
+    y = random->status[3];
+    x = (random->status[0] & TINYMT32_MASK)
+	^ random->status[1]
+	^ random->status[2];
+    x ^= (x << TINYMT32_SH0);
+    y ^= (y >> TINYMT32_SH0) ^ x;
+    random->status[0] = random->status[1];
+    random->status[1] = random->status[2];
+    random->status[2] = x ^ (y << TINYMT32_SH1);
+    random->status[3] = y;
+    random->status[1] ^= -((int32_t)(y & 1)) & random->mat1;
+    random->status[2] ^= -((int32_t)(y & 1)) & random->mat2;
+}
+
+/**
+ * This function outputs 32-bit unsigned integer from internal state.
+ * Users should not call this function directly.
+ * @param random tinymt internal status
+ * @return 32-bit unsigned pseudorandom number
+ */
+ static Uint32 tinymt32_temper(tinymt32_t * random) {
+    Uint32 t0, t1;
+    t0 = random->status[3];
+#if defined(LINEARITY_CHECK)
+    t1 = random->status[0]
+	^ (random->status[2] >> TINYMT32_SH8);
+#else
+    t1 = random->status[0]
+	+ (random->status[2] >> TINYMT32_SH8);
+#endif
+    t0 ^= t1;
+    t0 ^= -((int32_t)(t1 & 1)) & random->tmat;
+    return t0;
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * Users should not call this function directly.
+ * @param random tinymt internal status
+ * @return floating point number r (1.0 <= r < 2.0)
+ */
+ static float tinymt32_temper_conv(tinymt32_t * random) {
+    Uint32 t0, t1;
+    union {
+	Uint32 u;
+	float f;
+    } conv;
+
+    t0 = random->status[3];
+#if defined(LINEARITY_CHECK)
+    t1 = random->status[0]
+	^ (random->status[2] >> TINYMT32_SH8);
+#else
+    t1 = random->status[0]
+	+ (random->status[2] >> TINYMT32_SH8);
+#endif
+    t0 ^= t1;
+    conv.u = ((t0 ^ (-((int32_t)(t1 & 1)) & random->tmat)) >> 9)
+		| (const Uint32)(0x3f800000);
+    return conv.f;
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * Users should not call this function directly.
+ * @param random tinymt internal status
+ * @return floating point number r (1.0 < r < 2.0)
+ */
+ static float tinymt32_temper_conv_open(tinymt32_t * random) {
+    Uint32 t0, t1;
+    union {
+	Uint32 u;
+	float f;
+    } conv;
+
+    t0 = random->status[3];
+#if defined(LINEARITY_CHECK)
+    t1 = random->status[0]
+	^ (random->status[2] >> TINYMT32_SH8);
+#else
+    t1 = random->status[0]
+	+ (random->status[2] >> TINYMT32_SH8);
+#endif
+    t0 ^= t1;
+    conv.u = ((t0 ^ (-((int32_t)(t1 & 1)) & random->tmat)) >> 9)
+		| (const Uint32)(0x3f800001);
+    return conv.f;
+}
+
+/**
+ * This function outputs 32-bit unsigned integer from internal state.
+ * @param random tinymt internal status
+ * @return 32-bit unsigned integer r (0 <= r < 2^32)
+ */
+static Uint32 tinymt32_generate_uint32(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper(random);
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * This function is implemented using multiplying by 1 / 2^32.
+ * floating point multiplication is faster than using union trick in
+ * my Intel CPU.
+ * @param random tinymt internal status
+ * @return floating point number r (0.0 <= r < 1.0)
+ */
+float tinymt32_generate_float(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper(random) * TINYMT32_MUL;
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * This function is implemented using union trick.
+ * @param random tinymt internal status
+ * @return floating point number r (1.0 <= r < 2.0)
+ */
+static float tinymt32_generate_float12(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper_conv(random);
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * This function is implemented using union trick.
+ * @param random tinymt internal status
+ * @return floating point number r (0.0 <= r < 1.0)
+ */
+ static float tinymt32_generate_float01(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper_conv(random) - 1.0f;
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * This function may return 1.0 and never returns 0.0.
+ * @param random tinymt internal status
+ * @return floating point number r (0.0 < r <= 1.0)
+ */
+static float tinymt32_generate_floatOC(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return 1.0f - tinymt32_generate_float(random);
+}
+
+/**
+ * This function outputs floating point number from internal state.
+ * This function returns neither 0.0 nor 1.0.
+ * @param random tinymt internal status
+ * @return floating point number r (0.0 < r < 1.0)
+ */
+static float tinymt32_generate_floatOO(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper_conv_open(random) - 1.0f;
+}
+
+/**
+ * This function outputs double precision floating point number from
+ * internal state. The returned value has 32-bit precision.
+ * In other words, this function makes one double precision floating point
+ * number from one 32-bit unsigned integer.
+ * @param random tinymt internal status
+ * @return floating point number r (0.0 < r <= 1.0)
+ */
+static double tinymt32_generate_32double(tinymt32_t * random) {
+    tinymt32_next_state(random);
+    return tinymt32_temper(random) * (1.0 / 4294967296.0);
+}
+
 /**
  * This function represents a function used in the initialization
  * by init_by_array
@@ -26,7 +221,7 @@
  */
 static Uint32 ini_func1(Uint32 x)
 {
-	return (x ^ (x >> 27)) * UINT32_C(1664525);
+	return (x ^ (x >> 27)) * (const Uint32)(1664525);
 }
 
 /**
@@ -37,7 +232,7 @@ static Uint32 ini_func1(Uint32 x)
  */
 static Uint32 ini_func2(Uint32 x)
 {
-	return (x ^ (x >> 27)) * UINT32_C(1566083941);
+	return (x ^ (x >> 27)) * (const Uint32)(1566083941);
 }
 
 /**
@@ -70,7 +265,7 @@ void tinymt32_init(tinymt32_t * random, Uint32 seed)
 	random->status[2] = random->mat2;
 	random->status[3] = random->tmat;
 	for (int i = 1; i < MIN_LOOP; i++) {
-		random->status[i & 3] ^= i + UINT32_C(1812433253)
+		random->status[i & 3] ^= i + (const Uint32)(1812433253)
 		                         * (random->status[(i - 1) & 3]
 		                            ^ (random->status[(i - 1) & 3] >> 30));
 	}

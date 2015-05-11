@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <functional>
 #include <memory>
 #include <GL/glew.h>
 #include <SDL.h>

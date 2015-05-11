@@ -1,5 +1,6 @@
 
 #include <SDL.h>
+#include <cstddef>
 #include "tuple.h"
 #include "threedee.h"
 #include "quat.h"

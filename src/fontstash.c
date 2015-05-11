@@ -23,8 +23,10 @@
 
 
 #include <stddef.h>
+#include <math.h>
 #include <fontstash.h>
 #include <SDL.h>
+#include "res_path.h"
 
 #define FONS_NOTUSED(v)  (void)sizeof(v)
 
@@ -740,14 +742,13 @@ error:
 
 int fonsAddFont(FONScontext* stash, const char* name, const char* path)
 {
-	FILE* fp = 0;
 	int dataSize = 0;
 	unsigned char* data = NULL;
 
 	// Read in the font data.
 	Uint64 length;
 	void * fontmem = get_resource_file("font", name, length);
-	if (fp == NULL) goto error;
+	if (fontmem == NULL) goto error;
 
 	return fonsAddFontMem(stash, name, data, dataSize, 1);
 

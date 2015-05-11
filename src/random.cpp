@@ -18,7 +18,7 @@ RandomContext::RandomContext(Uint32 seed)
 
 float RandomContext::nextRandom()
 {
-	::tinymt32_generate_float(&this->state);
+	return ::tinymt32_generate_float(&this->state);
 }
 
 }

@@ -15,6 +15,9 @@ endif()
 
 find_package(Threads)
 
+if (WIN32)
+   list(APPEND LIBS Iphlpapi.lib version.lib ws2_32.lib winmm.lib imm32.lib version.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib)
+endif()
 
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
@@ -25,7 +28,7 @@ include_directories(${SDL2_NET_INCLUDE_DIRS})
 list(APPEND LIBS ${SDL2_NET_LIBRARIES})
 
 find_package(PhysFS REQUIRED)
-include_directories(${PHYSFS_INCLUDE_DIRS})
+include_directories(${PHYSFS_INCLUDE_DIR})
 list(APPEND LIBS ${PHYSFS_LIBRARY})
 
 # Find all the libs that don't require extra parameters
@@ -40,7 +43,6 @@ endforeach(lib)
 file(GLOB Includes include/*.h)
 file(GLOB Sources src/*.c*)
 
-#list(APPEND LIBS blendish)
 include_directories(include)
 add_executable(meistravimas ${Sources} ${Includes})
 target_link_libraries(meistravimas ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})

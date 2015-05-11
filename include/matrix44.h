@@ -125,7 +125,7 @@ public:
 		elements[10] = scale.z();
 	}
 
-	void ortho(float left, float right, float top, float bottom, float far, float near) {
+	void ortho(float left, float right, float top, float bottom, float ffar, float fnear) {
 		elements[0] = 2.0f / ( right - left );
 		elements[1] = 0.0f;
 		elements[2] = 0.0f;
@@ -138,12 +138,12 @@ public:
 
 		elements[8] = 0.0f;
 		elements[9] = 0.0f;
-		elements[10] = -2.0f / ( far - near );
+		elements[10] = -2.0f / ( ffar - fnear );
 		elements[11] = 0.0f;
 
 		elements[12] = ( right + left )  / ( right - left );
 		elements[13] = ( top + bottom ) / ( top - bottom );
-		elements[14] = ( far + near ) / ( far - near );
+		elements[14] = ( ffar + fnear ) / ( ffar - fnear );
 		elements[15] = 1.0f;
 	}
 
@@ -261,35 +261,35 @@ public:
 	/* 	lookAt(at, direction); */
 	/* } */
 
-    void frustum(float left, float right, float bottom, float top, float near, float far) {
+    void frustum(float left, float right, float bottom, float top, float fnear, float ffar) {
 		float rl = (right - left);
 		float tb = (top - bottom);
-		float fn = (far - near);
+		float fn = (ffar - fnear);
 
-		elements[0] = (near * 2.0f) / rl;
+		elements[0] = (fnear * 2.0f) / rl;
 		elements[1] = 0.0f;
 		elements[2] = 0.0f;
 		elements[3] = 0.0f;
 		elements[4] = 0.0f;
-		elements[5] = (near * 2.0f) / tb;
+		elements[5] = (fnear * 2.0f) / tb;
 		elements[6] = 0.0f;
 		elements[7] = 0.0f;
 		elements[8] = (right + left) / rl;
 		elements[9] = (top + bottom) / tb;
-		elements[10] = -(far + near) / fn;
+		elements[10] = -(ffar + fnear) / fn;
 		elements[11] = -1.0f;
 		elements[12] = 0.0f;
 		elements[13] = 0.0f;
-		elements[14] = -(far * near * 2.0f) / fn;
+		elements[14] = -(ffar * fnear * 2.0f) / fn;
 		elements[15] = 0.0f;
 		return;
 	}
 
-	void persp(float fovy, float aspect, float near, float far) {
+	void persp(float fovy, float aspect, float fnear, float ffar) {
 		// divide by 360.0f rather than 180.0f because this is half fov
-		float top = near * tanf(fovy * M_PI / 360.0);
+		float top = fnear * tanf(fovy * M_PI / 360.0);
 		float  right = top * aspect;
-		frustum(-right, right, -top, top, near, far);
+		frustum(-right, right, -top, top, fnear, ffar);
 	}
 
 

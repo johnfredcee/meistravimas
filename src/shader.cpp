@@ -13,13 +13,15 @@
 
 using namespace venk;
 
+namespace venk {
+	
+void show_info_log(GLuint object,
+	                          PFNGLGETSHADERIVPROC glGet__iv,
+	                          PFNGLGETSHADERINFOLOGPROC glGet__InfoLog);
 
 Shader::Shader(GLenum type, const std::string& filename) :  shaderOk(false), shader(0)
 {
 
-	extern void show_info_log(GLuint object,
-	                          PFNGLGETSHADERIVPROC glGet__iv,
-	                          PFNGLGETSHADERINFOLOGPROC glGet__InfoLog);
 
 	Uint64 length = 0;
 	char* source = file_contents(filename.c_str(), &length);
@@ -55,4 +57,6 @@ Shader::~Shader()
 	glDeleteShader(shader);
 	shader = 0;
 	shaderOk = 0;
+}
+
 }
