@@ -17,7 +17,7 @@
 #include <scheme.h>
 #include <stb_truetype.h>
 #include "hashstring.h"
-#include "locator.h"
+#include "locator.h"   
 #include "servicecounter.h"
 #include "service.h"
 #include "servicecheckout.h"
@@ -28,7 +28,9 @@
 
 namespace venk {
 
-bool FontService::initialise(FontService* self) {
+
+bool FontService::initialise(FontService* self)
+{
 	(void) self;
 	// ServiceCheckout<ScriptingService> scripting;
 	// scheme* sc = scripting->get_scheme();

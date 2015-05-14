@@ -1,5 +1,9 @@
 
 
+* Game
+** Sprite
+** Command Queue
+** State Machine
 * Immediate
 ** DONE Image eunmeration
 ** TODO Cleaner exit when no connection

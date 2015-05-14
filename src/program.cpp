@@ -11,12 +11,16 @@
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_net.h>
+#include <scheme-private.h>
 
 #include "hashstring.h"
 #include "locator.h"
 #include "servicecounter.h"
 #include "service.h"
 #include "servicecheckout.h"
+#include "image.h"
+#include "texture.h"
 #include "shader.h"
 #include "program.h"
 
@@ -370,20 +374,21 @@ void Program::setUniformMat4f(const std::string& name, const GLfloat* mat4)
 
 void Program::setUniformSampler(Sint32 location, Sint32 textureUnit, Texture *texture)
 {
-	// SDL_assert(texture);
-	// glActiveTexture(GL_TEXTURE0 + textureUnit);
-	// texture->select();
-	// glUniform1i(location, textureUnit);
-	// SDL_assert(glGetError() == GL_NO_ERROR);
+	SDL_assert(texture);
+	glActiveTexture(GL_TEXTURE0 + textureUnit);
+	texture->select();
+	glUniform1i(location, textureUnit);
+	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
 void Program::setUniformSampler(const std::string& name, Sint32 textureUnit, Texture *texture)
 {
-	// SDL_assert(texture);
-	// glActiveTexture(GL_TEXTURE0 + textureUnit);
-	// texture->select();
-	// glUniform1i(location, textureUnit);
-	// SDL_assert(glGetError() == GL_NO_ERROR);
+	Sint32 location = getUniformLocation(name);	
+	SDL_assert(texture);
+	glActiveTexture(GL_TEXTURE0 + textureUnit);
+	texture->select();
+	glUniform1i(location, textureUnit);
+	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
 Sint32 Program::getAttributeLocation(const std::string& name)
