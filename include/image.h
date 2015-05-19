@@ -71,7 +71,7 @@ public:
 	int height() const {
 		return (mPixels != nullptr) ? mHeight : 0;
 	}
-	bool   hasAlpha() const {
+	bool hasAlpha() const {
 		return (mPixels != nullptr) ? (mChannels <= 3) : false;
 	}
 	operator bool() const {

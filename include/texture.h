@@ -29,21 +29,13 @@ namespace venk
 		/**
 		 * Actually create a texture via the service
 		 */
-		std::shared_ptr<Texture> makeTexture(const char *name, const bool sdl = false);
+		std::shared_ptr<Texture> makeTexture(const char *name);
 
 		/**
 		 * Actually create a texture via the service
 		 */
-		std::shared_ptr<Texture> makeTexture(const Image* img, const bool sdl = false);
+		std::shared_ptr<Texture> makeTexture(const Image* img);
 		
-		void setRenderer(std::weak_ptr<SDL_Renderer> renderer) { mCurrentRenderer = renderer; }
-		void clearRenderer() { mCurrentRenderer = std::weak_ptr<SDL_Renderer>(); }
-
-	private:
-		/**
-		 * Renderer we are currently using  for textures
-		 */   
-		static std::weak_ptr<SDL_Renderer> mCurrentRenderer;
 	};
 
 	class Texture
@@ -52,14 +44,18 @@ namespace venk
 
 	private:
 		SDL_Texture*      texture_ptr;
-		void 			  makeSDLTexture(const Image* image);
 		GLuint            gl_texture;
 		
 	public:
+		int				  width;
+		int				  height;
+		bool			  alpha;
+		
+		
 		/**
 		 * Create a texture from a loaded image 
          */
-		Texture(const Image* image, const bool sdl = false);
+		Texture(const Image* image);
 
 		/**
          * Test for validity 
@@ -68,13 +64,20 @@ namespace venk
 		operator bool() const { return texture_ptr != nullptr; }
 
 		/**
-         * Return a pointer to an SDL texture for rendering
+         * Select the texture as current for operation 
          */
-	    SDL_Texture* getSDL_Texture();
-		void selectSDL_Texture();
-		void deselectSDL_Texture();
 		void select(GLuint i = 0);
+
+		/**
+         * Deselect their texture as current for operation 
+         */
 		void deselect(GLuint i = 0);
+
+		/** 
+         * appy the texture to the shader as a uniform 
+         */
+		// TODO
+		
 		~Texture();
 	};
 

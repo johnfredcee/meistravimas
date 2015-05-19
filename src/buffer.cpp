@@ -129,6 +129,7 @@ void Buffer::draw(GLenum mode) const  {
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
+
 /**
  * Draw some of the buffer
  * @param mode Primitive to use
@@ -137,7 +138,15 @@ void Buffer::draw(GLenum mode) const  {
 void Buffer::drawSome(GLenum mode, GLuint count) const
 {
 //	GLsizei typeSize = getTypeSize(mType);
+	SDL_assert(mTarget == GL_ELEMENT_ARRAY_BUFFER);
 	glDrawElements(mode, count, mType, (void*) 0);
+	SDL_assert(glGetError() == GL_NO_ERROR);
+}
+
+void Buffer::drawRange(GLenum mode, GLuint offset, GLuint count) const
+{
+	SDL_assert(mTarget == GL_ELEMENT_ARRAY_BUFFER);
+	glDrawElements(mode, count, mType, (void*) (offset * mComponentCount) ); 
 }
 
 void Buffer::drawImmediate(GLenum mode) const  
