@@ -18,7 +18,9 @@
 #define USE_CHAR_CLASSIFIERS 1
 #define USE_STRING_PORTS 1
 #define USE_ERROR_HOOK 0
+#ifndef _MSC_VER
 #define USE_STRCASECMP 1
+#endif
 #define USE_PLIST 1
 #define STANDALONE 0
 //#define USE_SCHEME_STACK 0
