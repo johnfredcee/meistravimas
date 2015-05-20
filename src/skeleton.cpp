@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 				{
 					ServiceCheckout<SpriteService> sprites;
 					for(int i = 0; i < 6; i++) {
-						for(int j = 0; i < 6; j++) {
+						for(int j = 0; j < 6; j++) {
 							spriteBank.push_back(sprites->createSprite(backdrop, i, j, 16, 16));
 						}
 					}
