@@ -42,6 +42,8 @@
 #include "renderstate.h"
 #include "sprite.h"
 #include "timer.h"
+#include "tinymt32.h"
+#include "random.h"
 #include "tinyscm_if.h"
 #include "panel.h"
 #include "gui.h"
@@ -67,7 +69,8 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) renderer;
 	(void) alpha;
 	(void) window;
-	
+	ServiceCheckout<SpriteService> sprites;
+	sprites->render(alpha, window, renderer);
 }
 
 void update(double t, double dt) {
@@ -222,9 +225,13 @@ int main(int argc, char **argv) {
 				ServiceRegistry<SpriteService>::initialise();
 				{
 					ServiceCheckout<SpriteService> sprites;
+					RandomContext spriteRandom;
 					for(int i = 0; i < 6; i++) {
 						for(int j = 0; j < 6; j++) {
-							spriteBank.push_back(sprites->createSprite(backdrop, i, j, 16, 16));
+							std::shared_ptr<Sprite> sprite(sprites->createSprite(backdrop, i, j, 16, 16));
+							sprite->setXY(spriteRandom.nextRandom(), spriteRandom.nextRandom());
+							spriteBank.push_back(sprite);
+							
 						}
 					}
 				}
