@@ -248,8 +248,6 @@ int main(int argc, char **argv) {
 				ServiceRegistry<ImageService>::initialise();
 				ServiceRegistry<TextureService>::initialise();
 				
-				ServiceCheckout<ImageService> images;
-				ServiceCheckout<TextureService> textures;
 				std::shared_ptr<Texture> background(load_texture("test.tga"));
 				std::shared_ptr<Texture> spritesheet(load_texture("boulders.png"));
 				ServiceRegistry<ProgramService>::initialise();
