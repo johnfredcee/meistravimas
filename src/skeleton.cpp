@@ -155,6 +155,67 @@ std::shared_ptr<SDL_Renderer> create_renderer(SDL_Window* window) {
 	return renderer;
 }
 
+SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
+	// we created renderer, get info about it
+	SDL_RendererInfo info;
+	SDL_GetRendererInfo(renderer, &info);
+	std::cout << " Renderer chosen " << info.name << std::endl;
+	SDL_GLContext glctx = SDL_GL_CreateContext(window);
+	SDL_assert(glctx != nullptr);
+	
+	// init glew so we can do OpenGL properly
+	Uint32 err = glewInit();
+	if(err != GLEW_OK) {
+		std::cerr << "Glew init failed " << glewGetErrorString(GLEW_VERSION) << std::endl;
+		SDL_Quit();
+		exit(-1);
+	}
+	GLdouble maj = 0;
+	glGetDoublev(GL_MAJOR_VERSION, &maj);
+	GLdouble min = 0;
+	glGetDoublev(GL_MINOR_VERSION, &min);
+	std::cout << "OpenGL Version: " << maj << "." << min << std::endl;
+	//Use Vsync
+	if(SDL_GL_SetSwapInterval(1) < 0) {
+		std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;
+	}
+	// Enable depth testing
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glViewport(0, 0, screen_width, screen_height);
+	SDL_assert(glGetError() == GL_NO_ERROR);
+	return glctx;
+}
+
+void create_sprites(std::shared_ptr<Texture> sheet) {	
+	ServiceCheckout<SpriteService> sprites;
+	RandomContext spriteRandom;
+	for(int i = 0; i < 6; i++) {
+		for(int j = 0; j < 6; j++) {
+			std::shared_ptr<Sprite> sprite(sprites->createSprite(sheet, i, j, 16, 16));
+			sprite->setXY(spriteRandom.nextRandom(), spriteRandom.nextRandom());
+			spriteBank.push_back(sprite);
+			
+		}
+	}
+	return;
+}
+
+void renderer_setup() {
+	ServiceCheckout<RenderStateService> renderstate;
+	Matrix44 projection;
+	projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, -1.0f, 1.0f);
+	renderstate->set("projection", RenderParameter(projection));
+}
+
+std::shared_ptr<Texture> load_texture(const std::string& name) {
+	ServiceCheckout<ImageService> images;
+	ServiceCheckout<TextureService> textures;
+	std::shared_ptr<Image> image(images->loadImage(name.c_str()));
+	std::shared_ptr<Texture> texture(textures->makeTexture(image.get()));
+	return texture;
+}
+
 int main(int argc, char **argv) {
 	
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
@@ -178,69 +239,29 @@ int main(int argc, char **argv) {
 		std::shared_ptr<SDL_Window> window(create_window());
 		if (window) {
 			std::shared_ptr<SDL_Renderer> renderer(create_renderer(window.get()));
-			if(renderer) {
-				// we created renderer, get info about it
-				SDL_RendererInfo info;
-				SDL_GetRendererInfo(renderer.get(), &info);
-				std::cout << " Renderer chosen " << info.name << std::endl;
-				SDL_GLContext glctx = SDL_GL_CreateContext(window.get());
-				SDL_assert(glctx != nullptr);
-
-				// init glew so we can do OpenGL properly
-				Uint32 err = glewInit();
-				if(err != GLEW_OK) {
-					std::cerr << "Glew init failed " << glewGetErrorString(GLEW_VERSION) << std::endl;
-					SDL_Quit();
-					exit(-1);
-				}
-				GLdouble maj = 0;
-				glGetDoublev(GL_MAJOR_VERSION, &maj);
-				GLdouble min = 0;
-				glGetDoublev(GL_MINOR_VERSION, &min);
-				std::cout << "OpenGL Version: " << maj << "." << min << std::endl;
-				//Use Vsync
-				if(SDL_GL_SetSwapInterval(1) < 0) {
-					std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;
-				}
-				// Enable depth testing
-				glEnable(GL_DEPTH_TEST);
-				glDepthFunc(GL_LEQUAL);
-				glViewport(0, 0, screen_width, screen_height);
-				SDL_assert(glGetError() == GL_NO_ERROR);
-
+			if(renderer) {				
+				SDL_GLContext glctx = opengl_setup(renderer.get(), window.get());
+				
 				// Now, we need keyboard and mouse
 				ServiceRegistry<MouseService>::initialise();
 				ServiceRegistry<KeyboardService>::initialise();				
 				ServiceRegistry<ImageService>::initialise();
-				ServiceCheckout<ImageService> images;
-				std::shared_ptr<Image> testcard(images->loadImage("test.tga"));
-				std::shared_ptr<Image> boulders(images->loadImage("boulders.png"));
 				ServiceRegistry<TextureService>::initialise();
+				
+				ServiceCheckout<ImageService> images;
 				ServiceCheckout<TextureService> textures;
-				std::shared_ptr<Texture> backdrop(textures->makeTexture(testcard.get()));				
-				std::shared_ptr<Texture> spritesheet(textures->makeTexture(boulders.get()));
+				std::shared_ptr<Texture> background(load_texture("test.tga"));
+				std::shared_ptr<Texture> spritesheet(load_texture("boulders.png"));
 				ServiceRegistry<ProgramService>::initialise();
 				ServiceRegistry<BufferManagerService>::initialise();
 				ServiceRegistry<RenderStateService>::initialise();
 				ServiceRegistry<SpriteService>::initialise();
-				{
-					ServiceCheckout<SpriteService> sprites;
-					RandomContext spriteRandom;
-					for(int i = 0; i < 6; i++) {
-						for(int j = 0; j < 6; j++) {
-							std::shared_ptr<Sprite> sprite(sprites->createSprite(backdrop, i, j, 16, 16));
-							sprite->setXY(spriteRandom.nextRandom(), spriteRandom.nextRandom());
-							spriteBank.push_back(sprite);
-							
-						}
-					}
-				}
+				renderer_setup();
+				create_sprites(spritesheet);
 #ifdef USE_GUI					
 				ServiceRegistry<GuiService>::initialise();
 #endif					
 				{
-					ServiceCheckout<TextureService> textures;
-					std::shared_ptr<Texture> background(textures->makeTexture(testcard.get()));
 					ServiceCheckout<ProgramService> programs;
 					std::shared_ptr<Program> backdrop_shader(programs->loadProgram("backdrop"));
 					SDL_assert(backdrop_shader->isValid());
