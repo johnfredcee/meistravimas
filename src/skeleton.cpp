@@ -165,7 +165,6 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 		initPhysfs(argv);
-#ifdef WITH_SCRIPTING		
 		ServiceRegistry<ScriptingService>::initialise();
 		if (argc > 1) {
 			ServiceCheckout<ScriptingService> scripting;		
@@ -173,7 +172,6 @@ int main(int argc, char **argv) {
 				scripting->load(argv[i-1]);
 			}
 		}
-#endif	   
 		std::shared_ptr<SDL_Window> window(create_window());
 		if (window) {
 			std::shared_ptr<SDL_Renderer> renderer(create_renderer(window.get()));
@@ -333,9 +331,7 @@ int main(int argc, char **argv) {
 				ServiceRegistry<MouseService>::shutdown();			
 			}
 		}
-#ifdef WITH_SCRIPTING	
 		ServiceRegistry<ScriptingService>::shutdown();
-#endif	
 		SDLNet_Quit();
 		int phsyfhshutdown = PHYSFS_deinit();
 		if(!phsyfhshutdown) {
