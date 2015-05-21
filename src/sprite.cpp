@@ -45,7 +45,7 @@ bool SpriteService::initialise(SpriteService* self)
 	(void) self;
 	ServiceCheckout<ProgramService> programs;
 	spriteShader = programs->loadProgram("sprite");
-	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, -1.0f, 1.0f);
+	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, 0.0f, 1.0f);
 	SDL_assert(spriteShader->isValid());	
 	return true;
 }
@@ -79,11 +79,10 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		if (!sprite->expired()) {
 			std::shared_ptr<Sprite> sprptr(sprite->lock());
-			for(auto i = vertices.begin(); i != vertices.end(); i++) {
-				float x = i->x() + sprptr->x;
-				float y = i->y() + sprptr->y;				
-				vertexBufferB->addVec3f(x,y, 0.0f);
-			}
+			vertexBufferB->addVec3f(sprptr->x, sprptr->y, 0.1f);
+			vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y, 0.1f);
+			vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y + sprptr->h, 0.1f);
+			vertexBufferB->addVec3f(sprptr->x, sprptr->y + sprptr->h, 0.1f);			
 			uvBufferB->addVec2f(sprptr->u0, sprptr->v1);
 			uvBufferB->addVec2f(sprptr->u0, sprptr->v0);
 			uvBufferB->addVec2f(sprptr->u1, sprptr->v0);
@@ -134,12 +133,14 @@ bool SpriteService::shutdown(SpriteService* self)
 }
 
 
-Sprite::Sprite(std::shared_ptr<Texture> tex, int sheetx, int sheety, float w, float h) :  x(0.0f), y(0.0f), scale(1.0f), texture(tex)
+Sprite::Sprite(std::shared_ptr<Texture> tex, int sheetx, int sheety, int pixel_width, int pixel_height) :  x(0.0f), y(0.0f), scale(1.0f), texture(tex)
 {
 	u0 = (float) sheetx / (float) tex->width;
 	u1 = (float) (sheetx +  w) / (float) tex->width;
 	v0 = 1.0f - ((float) sheety / (float) tex->height);
 	v1 = 1.0f - (((float) sheety + (float) h) / (float) tex->height);
+	w = (float) pixel_width;
+	h = (float) pixel_height;
 }
 
 Sprite::~Sprite()

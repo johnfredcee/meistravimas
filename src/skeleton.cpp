@@ -191,9 +191,8 @@ void create_sprites(std::shared_ptr<Texture> sheet) {
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 6; j++) {
 			std::shared_ptr<Sprite> sprite(sprites->createSprite(sheet, i, j, 16, 16));
-			sprite->setXY(spriteRandom.nextRandom(), spriteRandom.nextRandom());
+			sprite->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
 			spriteBank.push_back(sprite);
-
 		}
 	}
 	return;
@@ -288,7 +287,7 @@ int main(int argc, char **argv) {
 						render(1.0 - alpha, window.get(), renderer.get());
 #ifdef USE_GUI
 						{
-							ServiceCheckout<GuiService> gui;
+							ServiceCheckout<GuiService> gui;main
 							gui->render();
 						}
 #endif

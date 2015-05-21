@@ -54,13 +54,14 @@ class Sprite
 	friend class SpriteService;
 private:
 	float x,y;
+	float w,h;
 	float scale;
 	float u0, v0, u1, v1;
 	std::shared_ptr<Texture> texture;
 	
 public:
 	Sprite();	
-	Sprite(std::shared_ptr<Texture> texture, int sheetx, int sheety, float w, float h);
+	Sprite(std::shared_ptr<Texture> texture, int sheetx, int sheety, int w, int h);
 	~Sprite();
 	void render(double alpha, SDL_Window* window, SDL_Renderer* renderer);
 	void update(double t, double dt);
