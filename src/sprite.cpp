@@ -17,6 +17,8 @@
 #include "tuple.h"
 #include "twodee.h"
 #include "threedee.h"
+#include "quat.h"
+#include "matrix44.h"
 #include "image.h"
 #include "texture.h"
 #include "shader.h"
@@ -25,12 +27,16 @@
 #include "bufferbuilder.h"
 #include "sprite.h"
 
+extern int screen_width;
+extern int screen_height;
+
 namespace venk {
 
 std::shared_ptr<Buffer> SpriteService::vertexBuffer = std::shared_ptr<Buffer>();
 std::shared_ptr<Buffer> SpriteService::uvBuffer = std::shared_ptr<Buffer>();
 std::shared_ptr<Buffer> SpriteService::indexBuffer = std::shared_ptr<Buffer>();	
 std::shared_ptr<Program> SpriteService::spriteShader = std::shared_ptr<Program>();
+Matrix44 SpriteService::projection;
 
 SpriteService::SpriteTable_t SpriteService::sprites;
 
@@ -39,6 +45,7 @@ bool SpriteService::initialise(SpriteService* self)
 	(void) self;
 	ServiceCheckout<ProgramService> programs;
 	spriteShader = programs->loadProgram("sprite");
+	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, -1.0f, 1.0f);
 	SDL_assert(spriteShader->isValid());	
 	return true;
 }
@@ -46,6 +53,7 @@ bool SpriteService::initialise(SpriteService* self)
 std::shared_ptr<Sprite> SpriteService::createSprite(std::shared_ptr<Texture> texture, int sheetx, int sheety, int w, int h) {
 	std::shared_ptr<Sprite> result = std::make_shared<Sprite>(texture, sheetx, sheety, w, h);
 	std::weak_ptr<Sprite> ref(result);
+
 	SpriteService::sprites.push_back(ref);
 	return result;
 }
@@ -56,7 +64,7 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 	(void) window;
 	(void) renderer;
 	
-	std::shared_ptr<BufferBuilder> vertexBufferB(std::make_shared<BufferBuilder>(GL_FLOAT, 2));
+	std::shared_ptr<BufferBuilder> vertexBufferB(std::make_shared<BufferBuilder>(GL_FLOAT, 3));
 	std::shared_ptr<BufferBuilder> uvBufferB(std::make_shared<BufferBuilder>(GL_FLOAT, 2));
 	std::shared_ptr<BufferBuilder> indexBufferB(std::make_shared<BufferBuilder>(GL_UNSIGNED_SHORT, 1));
 
@@ -74,7 +82,7 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 			for(auto i = vertices.begin(); i != vertices.end(); i++) {
 				float x = i->x() + sprptr->x;
 				float y = i->y() + sprptr->y;				
-				vertexBufferB->addVec2f(x,y);			
+				vertexBufferB->addVec3f(x,y, 0.0f);
 			}
 			uvBufferB->addVec2f(sprptr->u0, sprptr->v1);
 			uvBufferB->addVec2f(sprptr->u0, sprptr->v0);
@@ -90,13 +98,13 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 	uvBuffer = uvBufferB->make_buffer(GL_ARRAY_BUFFER);
 	indexBuffer = indexBufferB->make_buffer(GL_ELEMENT_ARRAY_BUFFER);	
 	SpriteService::spriteShader->use();
-	float scl[2] = { 1.0f, 1.0f };
+	float scl = 1.0f;
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		if (!sprite->expired()) {
 			std::shared_ptr<Sprite> sprptr(sprite->lock());
-			scl[0] = sprptr->scale;
-			scl[1] = sprptr->scale;			
-			SpriteService::spriteShader->setUniform2f("vScale", scl);
+			scl = sprptr->scale;
+			SpriteService::spriteShader->setUniform1f("vScale", &scl);
+			SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
 			SpriteService::spriteShader->setUniformSampler("textureMap", 0, sprptr->texture.get());	
 			SpriteService::vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
 			SpriteService::uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");

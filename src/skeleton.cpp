@@ -55,15 +55,14 @@
 
 
 bool	quit = false;
+SDL_sem* global_lock = nullptr;
+int screen_width  = 640;
+int screen_height = 480;
 
-using namespace venk;
+namespace venk {
 
-const int screen_width  = 640;
-const int screen_height = 480;
 
 std::vector< std::shared_ptr<Sprite> > spriteBank;
-
-SDL_sem* global_lock = nullptr;
 
 void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) renderer;
@@ -86,8 +85,7 @@ void *realloc_shim(void *mem, PHYSFS_uint64 size) {
 	return SDL_realloc(mem, (size_t) size);
 }
 
-int initPhysfs(char **argv)
-{
+int initPhysfs(char **argv) {
 	PHYSFS_Allocator sdlAllocator;
 	sdlAllocator.Init = nullptr;
 	sdlAllocator.Deinit = nullptr;
@@ -114,24 +112,24 @@ int initPhysfs(char **argv)
 }
 
 std::shared_ptr<SDL_Window> create_window() {
-	
+
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-		
+
 
 	// create window
 	auto window_deleter = [](SDL_Window *w) {
 		if(w) SDL_DestroyWindow(w);
 	};
 	std::shared_ptr<SDL_Window> window(SDL_CreateWindow("SDLSkeleton",
-														SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-														screen_width, screen_height,
-														SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL),
-									   window_deleter);
+	                                   SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+	                                   screen_width, screen_height,
+	                                   SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL),
+	                                   window_deleter);
 	if(!window) {
 		std::cerr << "Unable to create SDL_Window" << std::endl;
 	}
@@ -162,7 +160,7 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 	std::cout << " Renderer chosen " << info.name << std::endl;
 	SDL_GLContext glctx = SDL_GL_CreateContext(window);
 	SDL_assert(glctx != nullptr);
-	
+
 	// init glew so we can do OpenGL properly
 	Uint32 err = glewInit();
 	if(err != GLEW_OK) {
@@ -187,7 +185,7 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 	return glctx;
 }
 
-void create_sprites(std::shared_ptr<Texture> sheet) {	
+void create_sprites(std::shared_ptr<Texture> sheet) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
 	for(int i = 0; i < 6; i++) {
@@ -195,17 +193,14 @@ void create_sprites(std::shared_ptr<Texture> sheet) {
 			std::shared_ptr<Sprite> sprite(sprites->createSprite(sheet, i, j, 16, 16));
 			sprite->setXY(spriteRandom.nextRandom(), spriteRandom.nextRandom());
 			spriteBank.push_back(sprite);
-			
+
 		}
 	}
 	return;
 }
 
 void renderer_setup() {
-	ServiceCheckout<RenderStateService> renderstate;
-	Matrix44 projection;
-	projection.ortho(0.0f, (float) screen_width, 0.0f, (float) screen_height, -1.0f, 1.0f);
-	renderstate->set("projection", RenderParameter(projection));
+	// does nothing now we are deprecating the render state service
 }
 
 std::shared_ptr<Texture> load_texture(const std::string& name) {
@@ -216,8 +211,12 @@ std::shared_ptr<Texture> load_texture(const std::string& name) {
 	return texture;
 }
 
+} //namespace venk
+
+using namespace venk;
+
 int main(int argc, char **argv) {
-	
+
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
@@ -231,7 +230,7 @@ int main(int argc, char **argv) {
 		initPhysfs(argv);
 		ServiceRegistry<ScriptingService>::initialise();
 		if (argc > 1) {
-			ServiceCheckout<ScriptingService> scripting;		
+			ServiceCheckout<ScriptingService> scripting;
 			for(int i = 0; i < argc-1; i++) {
 				scripting->load(argv[i-1]);
 			}
@@ -239,15 +238,15 @@ int main(int argc, char **argv) {
 		std::shared_ptr<SDL_Window> window(create_window());
 		if (window) {
 			std::shared_ptr<SDL_Renderer> renderer(create_renderer(window.get()));
-			if(renderer) {				
+			if(renderer) {
 				SDL_GLContext glctx = opengl_setup(renderer.get(), window.get());
-				
+
 				// Now, we need keyboard and mouse
 				ServiceRegistry<MouseService>::initialise();
-				ServiceRegistry<KeyboardService>::initialise();				
+				ServiceRegistry<KeyboardService>::initialise();
 				ServiceRegistry<ImageService>::initialise();
 				ServiceRegistry<TextureService>::initialise();
-				
+
 				std::shared_ptr<Texture> background(load_texture("test.tga"));
 				std::shared_ptr<Texture> spritesheet(load_texture("boulders.png"));
 				ServiceRegistry<ProgramService>::initialise();
@@ -256,9 +255,9 @@ int main(int argc, char **argv) {
 				ServiceRegistry<SpriteService>::initialise();
 				renderer_setup();
 				create_sprites(spritesheet);
-#ifdef USE_GUI					
+#ifdef USE_GUI
 				ServiceRegistry<GuiService>::initialise();
-#endif					
+#endif
 				{
 					ServiceCheckout<ProgramService> programs;
 					std::shared_ptr<Program> backdrop_shader(programs->loadProgram("backdrop"));
@@ -277,26 +276,26 @@ int main(int argc, char **argv) {
 						currentTime = newTime;
 						accumulator += frameTime;
 						while(accumulator >= dt) {
-							SDL_SemWait(global_lock);												 
+							SDL_SemWait(global_lock);
 							update(t, dt);
-							SDL_SemPost(global_lock);								
+							SDL_SemPost(global_lock);
 							t += dt;
 							accumulator -= dt;
 						}
 						const double alpha = accumulator / dt;
-						SDL_SemWait(global_lock);												 
-						
+						SDL_SemWait(global_lock);
+
 						render(1.0 - alpha, window.get(), renderer.get());
-#ifdef USE_GUI								
+#ifdef USE_GUI
 						{
 							ServiceCheckout<GuiService> gui;
 							gui->render();
 						}
-#endif								
+#endif
 						SDL_GL_SwapWindow(window.get());
-						
+
 						SDL_SemPost(global_lock);
-						
+
 						//Handle events on queue
 						SDL_PumpEvents();
 						while(SDL_PeepEvents(&e,1,SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
@@ -305,35 +304,32 @@ int main(int argc, char **argv) {
 								quit = true;
 							}
 							// theoretically this code could be replaced by an event filter (TODO)
-							switch(e.type)
-							{
-								case SDL_MOUSEWHEEL:
-								case SDL_MOUSEMOTION:
-								case SDL_MOUSEBUTTONUP:
-								case SDL_MOUSEBUTTONDOWN:
-									{
-										SDL_SemWait(global_lock);					   			   												
-										ServiceCheckout<MouseService> squeak;
-										squeak->mouse();
-										SDL_SemPost(global_lock);
-										
-									}
-									break;
-								case SDL_KEYUP:
-								case SDL_KEYDOWN:
-									{
-										SDL_SemWait(global_lock);					   												
-										ServiceCheckout<KeyboardService> keyb;
-										keyb->keyboard();
-										SDL_SemPost(global_lock);
-										
-									}
-									break;
-								default:
-									SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
-									break;
+							switch(e.type) {
+							case SDL_MOUSEWHEEL:
+							case SDL_MOUSEMOTION:
+							case SDL_MOUSEBUTTONUP:
+							case SDL_MOUSEBUTTONDOWN: {
+								SDL_SemWait(global_lock);
+								ServiceCheckout<MouseService> squeak;
+								squeak->mouse();
+								SDL_SemPost(global_lock);
+
 							}
-						}																						
+							break;
+							case SDL_KEYUP:
+							case SDL_KEYDOWN: {
+								SDL_SemWait(global_lock);
+								ServiceCheckout<KeyboardService> keyb;
+								keyb->keyboard();
+								SDL_SemPost(global_lock);
+
+							}
+							break;
+							default:
+								SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
+								break;
+							}
+						}
 					}
 					// quit main loop
 					if (global_lock != nullptr) {
@@ -341,7 +337,7 @@ int main(int argc, char **argv) {
 						global_lock = nullptr;
 					}
 				}
-#ifdef USE_GUI					
+#ifdef USE_GUI
 				ServiceRegistry<GuiService>::shutdown();
 #endif
 				spriteBank.erase(spriteBank.begin(), spriteBank.end());
@@ -351,10 +347,10 @@ int main(int argc, char **argv) {
 				ServiceRegistry<ProgramService>::shutdown();
 				ServiceRegistry<TextureService>::shutdown();
 				SDL_GL_DeleteContext(glctx);
-			 
+
 				ServiceRegistry<ImageService>::shutdown();
 				ServiceRegistry<KeyboardService>::shutdown();
-				ServiceRegistry<MouseService>::shutdown();			
+				ServiceRegistry<MouseService>::shutdown();
 			}
 		}
 		ServiceRegistry<ScriptingService>::shutdown();
@@ -367,5 +363,3 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 }
-
-

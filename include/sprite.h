@@ -46,6 +46,7 @@ protected:
 	static std::shared_ptr<Buffer>  indexBuffer;
 	static std::shared_ptr<Program> spriteShader;
 	static SpriteTable_t            sprites;
+	static Matrix44                 projection;
 };
 
 class Sprite
