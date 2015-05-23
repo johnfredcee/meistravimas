@@ -8,4 +8,5 @@ in vec2 UV;
 void main()
 {
 	vFragColor = texture(textureMap, UV);
+	vFragColor.r = 1.0f;
 }

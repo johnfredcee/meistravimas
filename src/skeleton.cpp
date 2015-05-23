@@ -312,7 +312,6 @@ int main(int argc, char **argv) {
 								ServiceCheckout<MouseService> squeak;
 								squeak->mouse();
 								SDL_SemPost(global_lock);
-
 							}
 							break;
 							case SDL_KEYUP:
@@ -321,7 +320,6 @@ int main(int argc, char **argv) {
 								ServiceCheckout<KeyboardService> keyb;
 								keyb->keyboard();
 								SDL_SemPost(global_lock);
-
 							}
 							break;
 							default:

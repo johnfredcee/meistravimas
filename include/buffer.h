@@ -47,7 +47,7 @@ public:
 
 	Buffer(GLenum		target,
 		   const void  *bufferData,
-		   GLenum	type,
+		   GLenum		type,
 		   GLsizei		count,
 		   GLsizei		componentCount = 1,
 		   GLenum		usage = GL_STATIC_DRAW);

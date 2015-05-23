@@ -146,7 +146,7 @@ void Buffer::drawSome(GLenum mode, GLuint count) const
 void Buffer::drawRange(GLenum mode, GLuint offset, GLuint count) const
 {
 	SDL_assert(mTarget == GL_ELEMENT_ARRAY_BUFFER);
-	glDrawElements(mode, count, mType, (void*) (offset * mComponentCount) ); 
+	glDrawElements(mode, count, mType, (void*) (offset) ); 
 }
 
 void Buffer::drawImmediate(GLenum mode) const  

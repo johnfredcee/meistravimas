@@ -108,7 +108,7 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 			SpriteService::vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
 			SpriteService::uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");
 			SpriteService::indexBuffer->bindIndices();
-			SpriteService::indexBuffer->draw(GL_TRIANGLES);
+			SpriteService::indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
 		}
 	}	
 	SpriteService::spriteShader->unUse();	
