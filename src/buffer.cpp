@@ -143,7 +143,7 @@ void Buffer::drawSome(GLenum mode, GLuint count) const
 	SDL_assert(glGetError() == GL_NO_ERROR);
 }
 
-void Buffer::drawRange(GLenum mode, GLuint offset, GLuint count) const
+void Buffer::drawRange(GLenum mode, GLuint count, GLuint offset) const
 {
 	SDL_assert(mTarget == GL_ELEMENT_ARRAY_BUFFER);
 	glDrawElements(mode, count, mType, (void*) (offset) ); 

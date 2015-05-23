@@ -64,7 +64,7 @@ public:
 	void bindIndices();
 	void draw(GLenum mode = GL_TRIANGLE_STRIP) const;
 	void drawSome(GLenum mode, GLuint count) const;
-	void drawRange(GLenum mode, GLuint offset, GLuint count) const;
+	void drawRange(GLenum mode, GLuint count, GLuint offset) const;
 	void drawImmediate(GLenum mode = GL_TRIANGLE_STRIP) const;
 	void drawSomeImmediate(GLenum mode, GLuint count) const;
 	void unbindIndices();
