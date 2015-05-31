@@ -28,11 +28,21 @@ public:
 	~BufferBuilder();
 	/* add values to the buffer */
 	void addVec1f(GLfloat x);
+	void setVec1f(Uint32 i, GLfloat x);
+	// v2
 	void addVec2f(GLfloat x, GLfloat y);
 	void addVec2f(const Vector2d& v);
+	void setVec2f(Uint32 i, GLfloat x, GLfloat y);	
+	void setVec2f(Uint32 i, const Vector2d& v);
+	// v3
 	void addVec3f(GLfloat x, GLfloat y, GLfloat z);
 	void addVec3f(const Vector3d& v);
+	void setVec3f(Uint32 i, GLfloat x, GLfloat y, GLfloat z);
+	void setVec3f(Uint32 i, const Vector3d& v);
+	// v4
 	void addVec4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+	void setVec4f(Uint32 i, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+	// vi
 	void addVec1ui(GLushort i);
 	void addVec2ui(GLushort i, GLushort j);
 	void addVec3ui(GLushort i, GLushort j, GLushort k);

@@ -40,21 +40,20 @@ SpriteService::SpriteBatchArray_t::iterator   SpriteService::batchWalker;
 Matrix44									  SpriteService::projection;
 
 
-bool SpriteService::initialise(SpriteService* self)
-{
+bool SpriteService::initialise(SpriteService* self) {
 	(void) self;
 	ServiceCheckout<ProgramService> programs;
 	spriteShader = programs->loadProgram("sprite");
 	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, 0.0f, 1.0f);
 	SDL_assert(spriteShader->isValid());
-	batchWalker = batches.begin();	
+	batchWalker = batches.begin();
 	return true;
 }
 
 
-std::weak_ptr<SpriteBatch> SpriteService::addBatch(std::shared_ptr<Texture> texture) {
+std::weak_ptr<SpriteBatch> SpriteService::addBatch(Uint32 size, std::shared_ptr<Texture> texture) {
 	nextBatchId++;
-	std::shared_ptr<SpriteBatch> sprite_batch(std::make_shared<SpriteBatch>(nextBatchId, texture));
+	std::shared_ptr<SpriteBatch> sprite_batch(std::make_shared<SpriteBatch>(nextBatchId, size, texture));
 	batches.push_back(sprite_batch);
 	return std::weak_ptr<SpriteBatch>(sprite_batch);
 }
@@ -64,7 +63,7 @@ void SpriteService::beginBatchWalk() {
 }
 
 std::weak_ptr<SpriteBatch> SpriteService::nextBatch() {
-	if (batchWalker != batches.end()) {
+	if(batchWalker != batches.end()) {
 		std::weak_ptr<SpriteBatch> result(*batchWalker);
 		++batchWalker;
 		return result;
@@ -73,128 +72,126 @@ std::weak_ptr<SpriteBatch> SpriteService::nextBatch() {
 }
 
 
-bool SpriteService::shutdown(SpriteService* self)
-{
+bool SpriteService::shutdown(SpriteService* self) {
 	(void) self;
 	return true;
 }
 
 
 // SpriteBatch methods
-SpriteBatch::SpriteBatch(Uint32 batchId, std::shared_ptr<Texture> batchTexture) : texture(batchTexture), id(batchId) {
+SpriteBatch::SpriteBatch(Uint32 batchId, Uint32 count, std::shared_ptr<Texture> batchTexture) : texture(batchTexture), id(batchId), nSprites(count), nUsed(0) {
+	std::shared_ptr<BufferBuilder> vertexBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 3);
+	std::shared_ptr<BufferBuilder> uvBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 2);
+	std::shared_ptr<BufferBuilder> indexBufferB = std::make_shared<BufferBuilder>(GL_UNSIGNED_SHORT, 1);
+	std::vector<Vector2d> vertices = {
+		{ -0.5f, -0.5f },
+		{ -0.5f, 0.5f },
+		{ 0.5f, 0.5f },
+		{ 0.5f, -0.5f }
+	};
+	std::vector<GLushort> indices = { 0, 1, 2, 2, 3, 0 };
+	GLushort offset = 0;
+	for(Uint32 i = 0; i < nSprites; ++i) {
+		vertexBufferB->addVec3f(-0.5f, -0.5f, 0.1f);
+		vertexBufferB->addVec3f(-0.5f,  0.5f, 0.1f);
+		vertexBufferB->addVec3f(0.5f,   0.5f, 0.1f);
+		vertexBufferB->addVec3f(0.5f,  -0.5f, 0.1f);		
+		uvBufferB->addVec2f(0.0f, 1.0f);
+		uvBufferB->addVec2f(0.0f, 0.0f);
+		uvBufferB->addVec2f(1.0f, 0.0f);
+		uvBufferB->addVec2f(1.0f, 1.0f);
+		for(auto i = indices.begin(); i != indices.end(); i++) {
+			indexBufferB->addVec1ui(*i + offset);
+		}
+		offset += 4;
+	}
+	vertexBuffer = vertexBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
+	uvBuffer = uvBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
+	indexBuffer = indexBufferB->make_buffer(GL_ELEMENT_ARRAY_BUFFER, GL_STREAM_DRAW);	
 	return;
 }
 
 SpriteBatch::~SpriteBatch() {
 }
 
-std::weak_ptr<Sprite>  SpriteBatch::addSprite(int sheetx, int sheety, int width, int height)
-{
+std::weak_ptr<Sprite>  SpriteBatch::addSprite(int sheetx, int sheety, int width, int height) {
+	SDL_assert(sprites.size() < nSprites);
 	std::shared_ptr<Sprite> sprite = std::make_shared<Sprite>();
 	sprite->u0 = (float) sheetx / (float) texture->width;
-	sprite->u1 = (float) (sheetx +  width) / (float) texture->width;
+	sprite->u1 = (float)(sheetx +  width) / (float) texture->width;
 	sprite->v0 = 1.0f - ((float) sheety / (float) texture->height);
 	sprite->v1 = 1.0f - (((float) sheety + (float) height) / (float) texture->height);
 	sprite->w = (float) width;
 	sprite->h = (float) height;
 	sprites.push_back(sprite);
+	nUsed++;
 	return std::weak_ptr<Sprite>(sprite);
 }
 
-void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* renderer)
-{
+void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) alpha;
 	(void) window;
 	(void) renderer;
-	
-	std::shared_ptr<BufferBuilder> vertexBufferB(std::make_shared<BufferBuilder>(GL_FLOAT, 3));
-	std::shared_ptr<BufferBuilder> uvBufferB(std::make_shared<BufferBuilder>(GL_FLOAT, 2));
-	std::shared_ptr<BufferBuilder> indexBufferB(std::make_shared<BufferBuilder>(GL_UNSIGNED_SHORT, 1));
-
-	std::vector<Vector2d> vertices = { { -0.5f, -0.5f },
-									   { -0.5f, 0.5f },
-									   { 0.5f, 0.5f },
-									   { 0.5f, -0.5f } };
-
-	std::vector<GLushort> indices = { 0, 1, 2, 2, 3, 0 };
-
-	GLushort offset = 0;
-	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
-		std::shared_ptr<Sprite> sprptr(*sprite);
-		vertexBufferB->addVec3f(sprptr->x, sprptr->y, 0.1f);
-		vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y, 0.1f);
-		vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y + sprptr->h, 0.1f);
-		vertexBufferB->addVec3f(sprptr->x, sprptr->y + sprptr->h, 0.1f);			
-		uvBufferB->addVec2f(sprptr->u0, sprptr->v1);
-		uvBufferB->addVec2f(sprptr->u0, sprptr->v0);
-		uvBufferB->addVec2f(sprptr->u1, sprptr->v0);
-		uvBufferB->addVec2f(sprptr->u1, sprptr->v1);
-		for(auto i = indices.begin(); i != indices.end(); i++) {
-			indexBufferB->addVec1ui(*i + offset);
-		}
-		offset += 4;
-	}
-	// TO DO : if buffers already exist, just update
-	vertexBuffer = vertexBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
-	uvBuffer = uvBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
-	indexBuffer = indexBufferB->make_buffer(GL_ELEMENT_ARRAY_BUFFER, GL_STREAM_DRAW);	
 	SpriteService::spriteShader->use();
 	float scl = 1.0f;
+	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
+		auto index = sprite - sprites.begin();
+		auto sprptr = sprite->get();
+		vertexBufferB->setVec3f(index * 4, sprptr->x, sprptr->y, 0.1f);
+		vertexBufferB->setVec3f((index+1) * 4, sprptr->x, sprptr->y + sprptr->h, 0.1f);
+		vertexBufferB->setVec3f((index+2) * 4, sprptr->x + sprptr->w , sprptr->y + sprptr->h, 0.1f);
+		vertexBufferB->setVec3f((index+3) * 4, sprptr->x + sprptr->w, sprptr->y, 0.1f);
+		uvBufferB->setVec2f(index, sprptr->u0, sprptr->v1);
+		uvBufferB->setVec2f((index+1), sprptr->u0, sprptr->v0);
+		uvBufferB->setVec2f((index+2), sprptr->u1, sprptr->v0);
+		uvBufferB->setVec2f((index+3), sprptr->u1, sprptr->v1);		
+	}	
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		std::shared_ptr<Sprite> sprptr(*sprite);
 		scl = sprptr->scale;
 		SpriteService::spriteShader->setUniform1f("vScale", &scl);
 		SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
-		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get());	
+		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get());
 		vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
 		uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");
 		indexBuffer->bindIndices();
 		indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
-	}	
-	SpriteService::spriteShader->unUse();		
+	}
+	SpriteService::spriteShader->unUse();
 }
 
-Sprite::Sprite()
-{
+Sprite::Sprite() {
 }
 
-Sprite::~Sprite()
-{
+Sprite::~Sprite() {
 }
 
 
-void SpriteBatch::update(double t, double dt)
-{
+void SpriteBatch::update(double t, double dt) {
 	(void) t;
 	(void) dt;
-	
-	
 }
 
-float Sprite::getScale() const
-{
+float Sprite::getScale() const {
 	return scale;
 }
 
-void Sprite::setScale(float newScale)
-{
+void Sprite::setScale(float newScale) {
 	scale = newScale;
 }
 
-float Sprite::getX() const
-{
+float Sprite::getX() const {
 	return x;
 }
 
-float Sprite::getY() const
-{
+float Sprite::getY() const {
 	return y;
 }
 
-void Sprite::setXY(float newX, float newY)
-{
+void Sprite::setXY(float newX, float newY) {
 	x = newX;
 	y = newY;
 }
 
 }
+

@@ -192,7 +192,7 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 void create_sprites(std::shared_ptr<Texture> sheet) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
-	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(sheet));
+	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6*6, sheet));
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 6; j++) {
 			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(i,j, 16, 16));

@@ -28,9 +28,15 @@ public:
      * get the next batch
 	 */
 	std::weak_ptr<SpriteBatch> nextBatch();
-	
-	std::weak_ptr<SpriteBatch> addBatch(std::shared_ptr<Texture> texture);
 
+	/**
+     * create a new batch
+     */
+	std::weak_ptr<SpriteBatch> addBatch(Uint32 size, std::shared_ptr<Texture> texture);
+
+	/**
+     * remove a batch of sprites from action
+     */
 	bool removeBatch(Uint32 id);
 		
 	/**
@@ -52,16 +58,23 @@ class SpriteBatch
 {
 	friend class SpriteService;
 private:
+	
 	std::shared_ptr<Texture> texture;
 	std::vector< std::shared_ptr<Sprite> > sprites;
+	// cpu buffer copies
+	std::shared_ptr<BufferBuilder> vertexBufferB;
+	std::shared_ptr<BufferBuilder> uvBufferB;
+	std::shared_ptr<BufferBuilder> indexBufferB;
+	// render buffers
 	std::shared_ptr<Buffer>  vertexBuffer;
 	std::shared_ptr<Buffer>  uvBuffer;
 	std::shared_ptr<Buffer>  indexBuffer;
-	Uint32 id;
+	Uint32                   id;
+	Uint32                   nSprites;
+	Uint32                   nUsed;
 	
 public:
-
-	SpriteBatch(Uint32 batchId, std::shared_ptr<Texture> batchTexture);
+	SpriteBatch(Uint32 batchId, Uint32 size, std::shared_ptr<Texture> batchTexture);
 
 	~SpriteBatch(); 
 
