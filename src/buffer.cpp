@@ -51,7 +51,7 @@ std::shared_ptr<Buffer> BufferManagerService::make_buffer(GLenum		target,
  */
 Buffer::Buffer(GLenum		target,
 			   const void  *bufferData,
-			   GLenum	type,
+			   GLenum		type,
 			   GLsizei		count,
 			   GLsizei		componentCount,
 			   GLenum		usage)	: mTarget(target), mSize(count), mComponentCount(componentCount), mType(type) 
@@ -71,12 +71,13 @@ Buffer::Buffer(GLenum		target,
  * Update data in the buffer (all of it)
  * @param bufferData Data to replace data in buffer with
  */
-void Buffer::update(const void *bufferData)
+void Buffer::update(const void *bufferData, GLenum usage)
 {
 	// some drivers crash if we don't do this.
+	GLsizei typeSize = getTypeSize(mType);
 	glBindBuffer(mTarget, mBuffer);
 	SDL_assert(glGetError() == GL_NO_ERROR);
-	glBufferSubData(mTarget, 0, mSize * getTypeSize(mType) * mComponentCount, bufferData);
+	glBufferData(mTarget, mSize * typeSize * mComponentCount, bufferData, usage);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 	return;
 }

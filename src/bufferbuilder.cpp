@@ -165,4 +165,8 @@ std::shared_ptr<Buffer> BufferBuilder::make_buffer(GLenum target, GLenum usage)
     return buffers->make_buffer(target, (void*) mBuffer, mType, mItemCount, mComponentCount, usage);
 }
 
+void BufferBuilder::update_buffer(std::shared_ptr<Buffer> buffer) {
+	buffer->update((void*) mBuffer);
+}
+
 }

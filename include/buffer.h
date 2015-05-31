@@ -58,7 +58,7 @@ public:
 	GLenum getType() const {
 		return mType;
 	}
-    void update(const void *bufferData );
+    void update(const void *bufferData, GLenum usage = GL_STATIC_DRAW);
 	void bindAttribute(Program* program, GLint attributeIndex, bool normalized = false);
 	void bindAttribute(Program* program, const std::string& attributeName, bool normalized = false);
 	void bindIndices();

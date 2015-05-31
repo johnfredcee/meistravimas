@@ -43,6 +43,7 @@ public:
 	/* return the type of the buffer (type and component count) */
 	void getTypeInfo(GLenum& type, GLsizei& component_count);
 	std::shared_ptr<Buffer> make_buffer(GLenum target, GLenum = GL_STATIC_DRAW);
+	void update_buffer(std::shared_ptr<Buffer> buffer);
 private:
 	void growBuffer();
 	

@@ -69,7 +69,11 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) alpha;
 	(void) window;
 	ServiceCheckout<SpriteService> sprites;
-	sprites->render(alpha, window, renderer);
+	sprites->beginBatchWalk();
+	std::weak_ptr<SpriteBatch> batch = sprites->nextBatch();
+	while(!batch.expired())  {
+		batch.lock()->render(alpha, window, renderer);
+	}
 }
 
 void update(double t, double dt) {
@@ -188,13 +192,13 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 void create_sprites(std::shared_ptr<Texture> sheet) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
+	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(sheet));
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 6; j++) {
-			std::shared_ptr<Sprite> sprite(sprites->createSprite(sheet, i, j, 16, 16));
-			sprite->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
-			spriteBank.push_back(sprite);
+			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(i,j, 16, 16));
+			sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
 		}
-	}
+	}	
 	return;
 }
 

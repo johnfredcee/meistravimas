@@ -32,13 +32,13 @@ extern int screen_height;
 
 namespace venk {
 
-std::shared_ptr<Buffer> SpriteService::vertexBuffer = std::shared_ptr<Buffer>();
-std::shared_ptr<Buffer> SpriteService::uvBuffer = std::shared_ptr<Buffer>();
-std::shared_ptr<Buffer> SpriteService::indexBuffer = std::shared_ptr<Buffer>();	
-std::shared_ptr<Program> SpriteService::spriteShader = std::shared_ptr<Program>();
-Matrix44 SpriteService::projection;
 
-SpriteService::SpriteTable_t SpriteService::sprites;
+Uint32								          SpriteService::nextBatchId = 1;
+std::shared_ptr<Program> SpriteService::spriteShader = std::shared_ptr<Program>();
+SpriteService::SpriteBatchArray_t             SpriteService::batches;
+SpriteService::SpriteBatchArray_t::iterator   SpriteService::batchWalker;
+Matrix44									  SpriteService::projection;
+
 
 bool SpriteService::initialise(SpriteService* self)
 {
@@ -46,19 +46,62 @@ bool SpriteService::initialise(SpriteService* self)
 	ServiceCheckout<ProgramService> programs;
 	spriteShader = programs->loadProgram("sprite");
 	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, 0.0f, 1.0f);
-	SDL_assert(spriteShader->isValid());	
+	SDL_assert(spriteShader->isValid());
+	batchWalker = batches.begin();	
 	return true;
 }
 
-std::shared_ptr<Sprite> SpriteService::createSprite(std::shared_ptr<Texture> texture, int sheetx, int sheety, int w, int h) {
-	std::shared_ptr<Sprite> result = std::make_shared<Sprite>(texture, sheetx, sheety, w, h);
-	std::weak_ptr<Sprite> ref(result);
 
-	SpriteService::sprites.push_back(ref);
-	return result;
+std::weak_ptr<SpriteBatch> SpriteService::addBatch(std::shared_ptr<Texture> texture) {
+	nextBatchId++;
+	std::shared_ptr<SpriteBatch> sprite_batch(std::make_shared<SpriteBatch>(nextBatchId, texture));
+	batches.push_back(sprite_batch);
+	return std::weak_ptr<SpriteBatch>(sprite_batch);
 }
 
-void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* renderer)
+void SpriteService::beginBatchWalk() {
+	batchWalker = batches.begin();
+}
+
+std::weak_ptr<SpriteBatch> SpriteService::nextBatch() {
+	if (batchWalker != batches.end()) {
+		std::weak_ptr<SpriteBatch> result(*batchWalker);
+		++batchWalker;
+		return result;
+	}
+	return std::weak_ptr<SpriteBatch>();
+}
+
+
+bool SpriteService::shutdown(SpriteService* self)
+{
+	(void) self;
+	return true;
+}
+
+
+// SpriteBatch methods
+SpriteBatch::SpriteBatch(Uint32 batchId, std::shared_ptr<Texture> batchTexture) : texture(batchTexture), id(batchId) {
+	return;
+}
+
+SpriteBatch::~SpriteBatch() {
+}
+
+std::weak_ptr<Sprite>  SpriteBatch::addSprite(int sheetx, int sheety, int width, int height)
+{
+	std::shared_ptr<Sprite> sprite = std::make_shared<Sprite>();
+	sprite->u0 = (float) sheetx / (float) texture->width;
+	sprite->u1 = (float) (sheetx +  width) / (float) texture->width;
+	sprite->v0 = 1.0f - ((float) sheety / (float) texture->height);
+	sprite->v1 = 1.0f - (((float) sheety + (float) height) / (float) texture->height);
+	sprite->w = (float) width;
+	sprite->h = (float) height;
+	sprites.push_back(sprite);
+	return std::weak_ptr<Sprite>(sprite);
+}
+
+void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* renderer)
 {
 	(void) alpha;
 	(void) window;
@@ -77,87 +120,55 @@ void SpriteService::render(double alpha, SDL_Window* window, SDL_Renderer* rende
 
 	GLushort offset = 0;
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
-		if (!sprite->expired()) {
-			std::shared_ptr<Sprite> sprptr(sprite->lock());
-			vertexBufferB->addVec3f(sprptr->x, sprptr->y, 0.1f);
-			vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y, 0.1f);
-			vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y + sprptr->h, 0.1f);
-			vertexBufferB->addVec3f(sprptr->x, sprptr->y + sprptr->h, 0.1f);			
-			uvBufferB->addVec2f(sprptr->u0, sprptr->v1);
-			uvBufferB->addVec2f(sprptr->u0, sprptr->v0);
-			uvBufferB->addVec2f(sprptr->u1, sprptr->v0);
-			uvBufferB->addVec2f(sprptr->u1, sprptr->v1);
-			for(auto i = indices.begin(); i != indices.end(); i++) {
-				indexBufferB->addVec1ui(*i + offset);
-			}
-			offset += 4;
-		}		
-	}		
-	vertexBuffer = vertexBufferB->make_buffer(GL_ARRAY_BUFFER);
-	uvBuffer = uvBufferB->make_buffer(GL_ARRAY_BUFFER);
-	indexBuffer = indexBufferB->make_buffer(GL_ELEMENT_ARRAY_BUFFER);	
+		std::shared_ptr<Sprite> sprptr(*sprite);
+		vertexBufferB->addVec3f(sprptr->x, sprptr->y, 0.1f);
+		vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y, 0.1f);
+		vertexBufferB->addVec3f(sprptr->x + sprptr->w, sprptr->y + sprptr->h, 0.1f);
+		vertexBufferB->addVec3f(sprptr->x, sprptr->y + sprptr->h, 0.1f);			
+		uvBufferB->addVec2f(sprptr->u0, sprptr->v1);
+		uvBufferB->addVec2f(sprptr->u0, sprptr->v0);
+		uvBufferB->addVec2f(sprptr->u1, sprptr->v0);
+		uvBufferB->addVec2f(sprptr->u1, sprptr->v1);
+		for(auto i = indices.begin(); i != indices.end(); i++) {
+			indexBufferB->addVec1ui(*i + offset);
+		}
+		offset += 4;
+	}
+	// TO DO : if buffers already exist, just update
+	vertexBuffer = vertexBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
+	uvBuffer = uvBufferB->make_buffer(GL_ARRAY_BUFFER, GL_STREAM_DRAW);
+	indexBuffer = indexBufferB->make_buffer(GL_ELEMENT_ARRAY_BUFFER, GL_STREAM_DRAW);	
 	SpriteService::spriteShader->use();
 	float scl = 1.0f;
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
-		if (!sprite->expired()) {
-			std::shared_ptr<Sprite> sprptr(sprite->lock());
-			scl = sprptr->scale;
-			SpriteService::spriteShader->setUniform1f("vScale", &scl);
-			SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
-			SpriteService::spriteShader->setUniformSampler("textureMap", 0, sprptr->texture.get());	
-			SpriteService::vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
-			SpriteService::uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");
-			SpriteService::indexBuffer->bindIndices();
-			SpriteService::indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
-		}
+		std::shared_ptr<Sprite> sprptr(*sprite);
+		scl = sprptr->scale;
+		SpriteService::spriteShader->setUniform1f("vScale", &scl);
+		SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
+		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get());	
+		vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
+		uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");
+		indexBuffer->bindIndices();
+		indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
 	}	
-	SpriteService::spriteShader->unUse();	
+	SpriteService::spriteShader->unUse();		
 }
 
-void SpriteService::update(double t, double dt)
+Sprite::Sprite()
 {
-	(void) t;
-	(void) dt;
-	
-	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
-		if (sprite->expired()) {
-			sprite = sprites.erase(sprite);
-		}
-	}
-}
-
-bool SpriteService::shutdown(SpriteService* self)
-{
-	(void) self;
-	return true;
-}
-
-
-Sprite::Sprite(std::shared_ptr<Texture> tex, int sheetx, int sheety, int pixel_width, int pixel_height) :  x(0.0f), y(0.0f), scale(1.0f), texture(tex)
-{
-	u0 = (float) sheetx / (float) tex->width;
-	u1 = (float) (sheetx +  w) / (float) tex->width;
-	v0 = 1.0f - ((float) sheety / (float) tex->height);
-	v1 = 1.0f - (((float) sheety + (float) h) / (float) tex->height);
-	w = (float) pixel_width;
-	h = (float) pixel_height;
 }
 
 Sprite::~Sprite()
 {
 }
 
-void Sprite::render(double alpha, SDL_Window* window, SDL_Renderer* renderer)
-{
-	(void) alpha;
-	(void) window;
-	(void) renderer;
-}
 
-void Sprite::update(double t, double dt)
+void SpriteBatch::update(double t, double dt)
 {
 	(void) t;
 	(void) dt;
+	
+	
 }
 
 float Sprite::getScale() const
