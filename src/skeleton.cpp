@@ -70,9 +70,10 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) window;
 	ServiceCheckout<SpriteService> sprites;
 	sprites->beginBatchWalk();
-	std::weak_ptr<SpriteBatch> batch = sprites->nextBatch();
-	while(!batch.expired())  {
-		batch.lock()->render(alpha, window, renderer);
+	std::shared_ptr<SpriteBatch> batch = sprites->nextBatch();
+	while(batch)  {
+		batch->render(alpha, window, renderer);
+		batch = sprites->nextBatch();
 	}
 }
 

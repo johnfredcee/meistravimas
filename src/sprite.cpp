@@ -51,24 +51,24 @@ bool SpriteService::initialise(SpriteService* self) {
 }
 
 
-std::weak_ptr<SpriteBatch> SpriteService::addBatch(Uint32 size, std::shared_ptr<Texture> texture) {
+std::shared_ptr<SpriteBatch> SpriteService::addBatch(Uint32 size, std::shared_ptr<Texture> texture) {
 	nextBatchId++;
 	std::shared_ptr<SpriteBatch> sprite_batch(std::make_shared<SpriteBatch>(nextBatchId, size, texture));
 	batches.push_back(sprite_batch);
-	return std::weak_ptr<SpriteBatch>(sprite_batch);
+	return std::shared_ptr<SpriteBatch>(sprite_batch);
 }
 
 void SpriteService::beginBatchWalk() {
 	batchWalker = batches.begin();
 }
 
-std::weak_ptr<SpriteBatch> SpriteService::nextBatch() {
+std::shared_ptr<SpriteBatch> SpriteService::nextBatch() {
 	if(batchWalker != batches.end()) {
-		std::weak_ptr<SpriteBatch> result(*batchWalker);
+		std::shared_ptr<SpriteBatch> result(*batchWalker);
 		++batchWalker;
 		return result;
 	}
-	return std::weak_ptr<SpriteBatch>();
+	return std::shared_ptr<SpriteBatch>();
 }
 
 
@@ -80,15 +80,9 @@ bool SpriteService::shutdown(SpriteService* self) {
 
 // SpriteBatch methods
 SpriteBatch::SpriteBatch(Uint32 batchId, Uint32 count, std::shared_ptr<Texture> batchTexture) : texture(batchTexture), id(batchId), nSprites(count), nUsed(0) {
-	std::shared_ptr<BufferBuilder> vertexBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 3);
-	std::shared_ptr<BufferBuilder> uvBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 2);
-	std::shared_ptr<BufferBuilder> indexBufferB = std::make_shared<BufferBuilder>(GL_UNSIGNED_SHORT, 1);
-	std::vector<Vector2d> vertices = {
-		{ -0.5f, -0.5f },
-		{ -0.5f, 0.5f },
-		{ 0.5f, 0.5f },
-		{ 0.5f, -0.5f }
-	};
+	vertexBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 3);
+	uvBufferB = std::make_shared<BufferBuilder>(GL_FLOAT, 2);
+	indexBufferB = std::make_shared<BufferBuilder>(GL_UNSIGNED_SHORT, 1);
 	std::vector<GLushort> indices = { 0, 1, 2, 2, 3, 0 };
 	GLushort offset = 0;
 	for(Uint32 i = 0; i < nSprites; ++i) {

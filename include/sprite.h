@@ -27,12 +27,12 @@ public:
 	/**
      * get the next batch
 	 */
-	std::weak_ptr<SpriteBatch> nextBatch();
+	std::shared_ptr<SpriteBatch> nextBatch();
 
 	/**
      * create a new batch
      */
-	std::weak_ptr<SpriteBatch> addBatch(Uint32 size, std::shared_ptr<Texture> texture);
+	std::shared_ptr<SpriteBatch> addBatch(Uint32 size, std::shared_ptr<Texture> texture);
 
 	/**
      * remove a batch of sprites from action
