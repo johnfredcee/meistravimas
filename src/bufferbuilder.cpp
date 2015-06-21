@@ -15,15 +15,16 @@
 #include "serviceregistry.h"
 #include "buffer.h"
 #include "bufferbuilder.h"
+#include "utils.h"
 
 namespace venk
 {
 
-BufferBuilder::BufferBuilder(GLenum type, GLsizei componentCount)
+BufferBuilder::BufferBuilder(GLenum type, GLsizei componentCount, Uint32 elementCount)
 {
 	mBufferSize		= 0;
-	mBuffer			= (Uint8*)SDL_malloc(1024);
-	mBufferCapacity = 1024;
+	mBufferCapacity = componentCount * elementCount * getTypeSize(type);
+	mBuffer			= (Uint8*)SDL_malloc(mBufferCapacity);
 	mItemCount		= 0;
 	mType			= type;
 	mComponentCount = componentCount;
@@ -58,7 +59,7 @@ void BufferBuilder::addVec1f(GLfloat x)
 void BufferBuilder::setVec1f(Uint32 i, GLfloat x) {
 	SDL_assert(mType == GL_FLOAT);
 	SDL_assert(mComponentCount == 1);
-	Sint64 bufferOffset = i * sizeof(GL_FLOAT * mComponentCount);
+	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
 }
@@ -84,7 +85,7 @@ void BufferBuilder::addVec2f(const Vector2d& v)
 void BufferBuilder::setVec2f(Uint32 i, GLfloat x, GLfloat y) {
 	SDL_assert(mType == GL_FLOAT);
 	SDL_assert(mComponentCount == 2);
-	Sint64 bufferOffset = i * sizeof(GL_FLOAT * mComponentCount);
+	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
 	bufferOffset += sizeof(GL_FLOAT);
@@ -117,7 +118,7 @@ void BufferBuilder::addVec3f(const Vector3d& v) {
 void BufferBuilder::setVec3f(Uint32 i, GLfloat x, GLfloat y, GLfloat z) {
 	SDL_assert(mType == GL_FLOAT);
 	SDL_assert(mComponentCount == 3);
-	Sint64 bufferOffset = i * sizeof(GL_FLOAT * mComponentCount);
+	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
 	bufferOffset += sizeof(GL_FLOAT);
@@ -150,7 +151,7 @@ void BufferBuilder::addVec4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 void BufferBuilder::setVec4f(Uint32 i, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
 	SDL_assert(mType == GL_FLOAT);
 	SDL_assert(mComponentCount == 4);
-	Sint64 bufferOffset = i * sizeof(GL_FLOAT * mComponentCount);
+	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
 	bufferOffset += sizeof(GL_FLOAT);

@@ -131,14 +131,15 @@ void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* rendere
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		auto index = sprite - sprites.begin();
 		auto sprptr = sprite->get();
-		vertexBufferB->setVec3f(index * 4, sprptr->x, sprptr->y, 0.1f);
-		vertexBufferB->setVec3f((index+1) * 4, sprptr->x, sprptr->y + sprptr->h, 0.1f);
-		vertexBufferB->setVec3f((index+2) * 4, sprptr->x + sprptr->w , sprptr->y + sprptr->h, 0.1f);
-		vertexBufferB->setVec3f((index+3) * 4, sprptr->x + sprptr->w, sprptr->y, 0.1f);
-		uvBufferB->setVec2f(index, sprptr->u0, sprptr->v1);
-		uvBufferB->setVec2f((index+1), sprptr->u0, sprptr->v0);
-		uvBufferB->setVec2f((index+2), sprptr->u1, sprptr->v0);
-		uvBufferB->setVec2f((index+3), sprptr->u1, sprptr->v1);		
+		Uint32 vIndex = index * 4;
+		vertexBufferB->setVec3f(vIndex, sprptr->x, sprptr->y, 0.1f);
+		vertexBufferB->setVec3f(vIndex+1, sprptr->x, sprptr->y + sprptr->h, 0.1f);
+		vertexBufferB->setVec3f(vIndex+2, sprptr->x + sprptr->w , sprptr->y + sprptr->h, 0.1f);
+		vertexBufferB->setVec3f(vIndex+3, sprptr->x + sprptr->w, sprptr->y, 0.1f);
+		uvBufferB->setVec2f(vIndex, sprptr->u0, sprptr->v1);
+		uvBufferB->setVec2f(vIndex+1, sprptr->u0, sprptr->v0);
+		uvBufferB->setVec2f(vIndex+2, sprptr->u1, sprptr->v0);
+		uvBufferB->setVec2f(vIndex+3, sprptr->u1, sprptr->v1);		
 	}	
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		std::shared_ptr<Sprite> sprptr(*sprite);

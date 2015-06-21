@@ -68,6 +68,8 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) renderer;
 	(void) alpha;
 	(void) window;
+
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);	
 	ServiceCheckout<SpriteService> sprites;
 	sprites->beginBatchWalk();
 	std::shared_ptr<SpriteBatch> batch = sprites->nextBatch();
@@ -190,6 +192,14 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 	return glctx;
 }
 
+void create_background(std::shared_ptr<Texture> background) {
+	ServiceCheckout<SpriteService> sprites;
+	RandomContext spriteRandom;
+	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(1, background));
+	std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0, 0, screen_width, screen_height));
+	return;
+}
+
 void create_sprites(std::shared_ptr<Texture> sheet) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
@@ -218,6 +228,37 @@ std::shared_ptr<Texture> load_texture(const std::string& name) {
 } //namespace venk
 
 using namespace venk;
+
+void update_and_render(SDL_Window* window, SDL_Renderer* renderer,
+					   double& currentTime, double& accumulator, double& dt, double& t) {
+	
+	double newTime = timeNow();
+	double frameTime = newTime - currentTime;
+	if(frameTime > 0.25)
+		frameTime = 0.25;
+	currentTime = newTime;
+	accumulator += frameTime;
+	while(accumulator >= dt) {
+		SDL_SemWait(global_lock);
+		update(t, dt);
+		SDL_SemPost(global_lock);
+		t += dt;
+		accumulator -= dt;
+	}
+	const double alpha = accumulator / dt;
+	SDL_SemWait(global_lock);
+	
+	render(1.0 - alpha, window, renderer);
+#ifdef USE_GUI
+	{
+		ServiceCheckout<GuiService> gui;
+		gui->render();
+	}
+#endif
+	SDL_GL_SwapWindow(window);	
+	SDL_SemPost(global_lock);	
+}
+
 
 int main(int argc, char **argv) {
 
@@ -258,7 +299,8 @@ int main(int argc, char **argv) {
 				ServiceRegistry<RenderStateService>::initialise();
 				ServiceRegistry<SpriteService>::initialise();
 				renderer_setup();
-				create_sprites(spritesheet);
+				create_background(background);
+				//				create_sprites(spritesheet);
 #ifdef USE_GUI
 				ServiceRegistry<GuiService>::initialise();
 #endif
@@ -273,33 +315,9 @@ int main(int argc, char **argv) {
 					global_lock = SDL_CreateSemaphore( 1 );
 					SDL_Event e;
 					while(!quit) {
-						double newTime = timeNow();
-						double frameTime = newTime - currentTime;
-						if(frameTime > 0.25)
-							frameTime = 0.25;
-						currentTime = newTime;
-						accumulator += frameTime;
-						while(accumulator >= dt) {
-							SDL_SemWait(global_lock);
-							update(t, dt);
-							SDL_SemPost(global_lock);
-							t += dt;
-							accumulator -= dt;
-						}
-						const double alpha = accumulator / dt;
-						SDL_SemWait(global_lock);
-
-						render(1.0 - alpha, window.get(), renderer.get());
-#ifdef USE_GUI
-						{
-							ServiceCheckout<GuiService> gui;main
-							gui->render();
-						}
-#endif
-						SDL_GL_SwapWindow(window.get());
-
-						SDL_SemPost(global_lock);
-
+						update_and_render(window.get(), renderer.get(),
+										  currentTime, accumulator, dt, t);
+						
 						//Handle events on queue
 						SDL_PumpEvents();
 						while(SDL_PeepEvents(&e,1,SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {

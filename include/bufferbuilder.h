@@ -24,7 +24,7 @@ private:
 	/* datatype of elements in the buffer */
 	GLenum  mType;
 public:	
-	BufferBuilder(GLenum type, GLsizei componentCount);
+	BufferBuilder(GLenum type, GLsizei componentCount, Uint32 elementCount = 32);
 	~BufferBuilder();
 	/* add values to the buffer */
 	void addVec1f(GLfloat x);
