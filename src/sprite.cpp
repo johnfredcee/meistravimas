@@ -117,6 +117,7 @@ std::weak_ptr<Sprite>  SpriteBatch::addSprite(int sheetx, int sheety, int width,
 	sprite->v1 = 1.0f - (((float) sheety + (float) height) / (float) texture->height);
 	sprite->w = (float) width;
 	sprite->h = (float) height;
+	sprite->scale = 1.0f;
 	sprites.push_back(sprite);
 	nUsed++;
 	return std::weak_ptr<Sprite>(sprite);
