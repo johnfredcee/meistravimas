@@ -44,7 +44,7 @@ bool SpriteService::initialise(SpriteService* self) {
 	(void) self;
 	ServiceCheckout<ProgramService> programs;
 	spriteShader = programs->loadProgram("sprite");
-	projection.ortho(0.0f, (float) ::screen_width, 0.0f, (float) ::screen_height, 0.0f, 1.0f);
+	projection.ortho(0.0f, (float) ::screen_width, (float) ::screen_height, 0.0f, -1.0f, 1.0f);
 	SDL_assert(spriteShader->isValid());
 	batchWalker = batches.begin();
 	return true;
@@ -108,15 +108,17 @@ SpriteBatch::SpriteBatch(Uint32 batchId, Uint32 count, std::shared_ptr<Texture> 
 SpriteBatch::~SpriteBatch() {
 }
 
-std::weak_ptr<Sprite>  SpriteBatch::addSprite(int sheetx, int sheety, int width, int height) {
+std::weak_ptr<Sprite>  SpriteBatch::addSprite(float x, float y, float width, float height, int sheetx, int sheety) {
 	SDL_assert(sprites.size() < nSprites);
 	std::shared_ptr<Sprite> sprite = std::make_shared<Sprite>();
 	sprite->u0 = (float) sheetx / (float) texture->width;
 	sprite->u1 = (float)(sheetx +  width) / (float) texture->width;
 	sprite->v0 = 1.0f - ((float) sheety / (float) texture->height);
 	sprite->v1 = 1.0f - (((float) sheety + (float) height) / (float) texture->height);
-	sprite->w = (float) width;
-	sprite->h = (float) height;
+	sprite->x = x;
+	sprite->y = y;
+	sprite->w = width;
+	sprite->h = height;
 	sprite->scale = 1.0f;
 	sprites.push_back(sprite);
 	nUsed++;
@@ -142,14 +144,16 @@ void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* rendere
 		uvBufferB->setVec2f(vIndex+2, sprptr->u1, sprptr->v0);
 		uvBufferB->setVec2f(vIndex+3, sprptr->u1, sprptr->v1);		
 	}	
+	vertexBufferB->update_buffer(vertexBuffer);
+	uvBufferB->update_buffer(uvBuffer);
 	for(auto sprite = sprites.begin(); sprite != sprites.end(); ++sprite) {
 		std::shared_ptr<Sprite> sprptr(*sprite);
 		scl = sprptr->scale;
 		SpriteService::spriteShader->setUniform1f("vScale", &scl);
 		SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
-		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get());
+		/*		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get()); */
 		vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
-		uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV");
+		/* uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV"); */
 		indexBuffer->bindIndices();
 		indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
 	}

@@ -86,7 +86,7 @@ public:
 	/**
      * Add a new sprite to the batch
      */
-	std::weak_ptr<Sprite> addSprite(int sheetx, int sheety, int w, int h);
+	std::weak_ptr<Sprite> addSprite(float x, float y, float w, float h, int sheetx, int sheety);
 	
 	/** 
      * render alloc active sprites

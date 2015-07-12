@@ -46,7 +46,6 @@
 #include "random.h"
 #include "tinyscm_if.h"
 #include "panel.h"
-#include "gui.h"
 #include "nanovg.h"
 #include "nanovg_gl.h"
 #include "blendish.h"
@@ -185,8 +184,8 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 		std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;
 	}
 	// Enable depth testing
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
 	glViewport(0, 0, screen_width, screen_height);
 	SDL_assert(glGetError() == GL_NO_ERROR);
 	return glctx;
@@ -196,7 +195,7 @@ void create_background(std::shared_ptr<Texture> background) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
 	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(1, background));
-	std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0, 0, screen_width, screen_height));
+	std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(100.0f, 100.0f, 255.0f, 255.0f, 0, 0));
 	return;
 }
 
@@ -206,7 +205,7 @@ void create_sprites(std::shared_ptr<Texture> sheet) {
 	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6*6, sheet));
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 6; j++) {
-			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(i,j, 16, 16));
+			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, i, j));
 			sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
 		}
 	}	
@@ -300,7 +299,7 @@ int main(int argc, char **argv) {
 				ServiceRegistry<SpriteService>::initialise();
 				renderer_setup();
 				create_background(background);
-				//				create_sprites(spritesheet);
+				//			create_sprites(spritesheet);
 #ifdef USE_GUI
 				ServiceRegistry<GuiService>::initialise();
 #endif

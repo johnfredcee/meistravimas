@@ -121,9 +121,9 @@ public:
 		elements[9] = 0.0f;
 		elements[10] = -2.0f / (ffar - fnear);
 		elements[11] = 0.0f;
-		elements[12] = (right + left)  / (right - left);
-		elements[13] = (top + bottom) / (top - bottom);
-		elements[14] = (ffar + fnear) / (ffar - fnear);
+		elements[12] = -(left + right)  / (right - left);
+		elements[13] = -(top + bottom) / (top - bottom);
+		elements[14] = -(ffar + fnear) / (ffar - fnear);
 		elements[15] = 1.0f;
 	}
 
