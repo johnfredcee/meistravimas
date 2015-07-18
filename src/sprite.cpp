@@ -86,10 +86,10 @@ SpriteBatch::SpriteBatch(Uint32 batchId, Uint32 count, std::shared_ptr<Texture> 
 	std::vector<GLushort> indices = { 0, 1, 2, 2, 3, 0 };
 	GLushort offset = 0;
 	for(Uint32 i = 0; i < nSprites; ++i) {
-		vertexBufferB->addVec3f(-0.5f, -0.5f, 0.1f);
-		vertexBufferB->addVec3f(-0.5f,  0.5f, 0.1f);
-		vertexBufferB->addVec3f(0.5f,   0.5f, 0.1f);
-		vertexBufferB->addVec3f(0.5f,  -0.5f, 0.1f);		
+		vertexBufferB->addVec3f(-0.5f, -0.5f, 0.0f);
+		vertexBufferB->addVec3f(-0.5f,  0.5f, 0.0f);
+		vertexBufferB->addVec3f(0.5f,   0.5f, 0.0f);
+		vertexBufferB->addVec3f(0.5f,  -0.5f, 0.0f);		
 		uvBufferB->addVec2f(0.0f, 1.0f);
 		uvBufferB->addVec2f(0.0f, 0.0f);
 		uvBufferB->addVec2f(1.0f, 0.0f);
@@ -135,10 +135,10 @@ void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* rendere
 		auto index = sprite - sprites.begin();
 		auto sprptr = sprite->get();
 		Uint32 vIndex = index * 4;
-		vertexBufferB->setVec3f(vIndex, sprptr->x, sprptr->y, 0.1f);
-		vertexBufferB->setVec3f(vIndex+1, sprptr->x, sprptr->y + sprptr->h, 0.1f);
-		vertexBufferB->setVec3f(vIndex+2, sprptr->x + sprptr->w , sprptr->y + sprptr->h, 0.1f);
-		vertexBufferB->setVec3f(vIndex+3, sprptr->x + sprptr->w, sprptr->y, 0.1f);
+		vertexBufferB->setVec3f(vIndex, sprptr->x, sprptr->y, -0.1f);
+		vertexBufferB->setVec3f(vIndex+1, sprptr->x, sprptr->y + sprptr->h, -0.1f);
+		vertexBufferB->setVec3f(vIndex+2, sprptr->x + sprptr->w , sprptr->y + sprptr->h, -0.1f);
+		vertexBufferB->setVec3f(vIndex+3, sprptr->x + sprptr->w, sprptr->y, 0.0f);
 		uvBufferB->setVec2f(vIndex, sprptr->u0, sprptr->v1);
 		uvBufferB->setVec2f(vIndex+1, sprptr->u0, sprptr->v0);
 		uvBufferB->setVec2f(vIndex+2, sprptr->u1, sprptr->v0);
@@ -151,9 +151,9 @@ void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* rendere
 		scl = sprptr->scale;
 		SpriteService::spriteShader->setUniform1f("vScale", &scl);
 		SpriteService::spriteShader->setUniformMat4f("mModelToClip", SpriteService::projection.elements);
-		/*		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get()); */
+		SpriteService::spriteShader->setUniformSampler("textureMap", 0, texture.get()); 
 		vertexBuffer->bindAttribute(SpriteService::spriteShader.get(), "vVertex");
-		/* uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV"); */
+		 uvBuffer->bindAttribute(SpriteService::spriteShader.get(), "vUV"); 
 		indexBuffer->bindIndices();
 		indexBuffer->drawRange(GL_TRIANGLES, 6, 6 * sizeof(GLushort) * (sprite - sprites.begin()));
 	}

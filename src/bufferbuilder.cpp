@@ -88,7 +88,7 @@ void BufferBuilder::setVec2f(Uint32 i, GLfloat x, GLfloat y) {
 	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
-	bufferOffset += sizeof(GL_FLOAT);
+	bufferOffset += sizeof(GLfloat);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = y;
 }
 
@@ -119,12 +119,13 @@ void BufferBuilder::setVec3f(Uint32 i, GLfloat x, GLfloat y, GLfloat z) {
 	SDL_assert(mType == GL_FLOAT);
 	SDL_assert(mComponentCount == 3);
 	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
+	GLfloat* bufferPtr = (GLfloat*)(mBuffer + bufferOffset);
 	SDL_assert(bufferOffset < mBufferSize);
-	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
-	bufferOffset += sizeof(GL_FLOAT);
-	(*(GLfloat*)(mBuffer + bufferOffset)) = y;
-	bufferOffset += sizeof(GL_FLOAT);
-	(*(GLfloat*)(mBuffer + bufferOffset)) = z;
+	*bufferPtr = x;
+	bufferPtr++;
+	*bufferPtr = y;
+	bufferPtr++;
+	*bufferPtr = z;
 }
 
 void BufferBuilder::setVec3f(Uint32 i, const Vector3d& v) {
@@ -154,11 +155,11 @@ void BufferBuilder::setVec4f(Uint32 i, GLfloat x, GLfloat y, GLfloat z, GLfloat 
 	Sint64 bufferOffset = i * sizeof(GLfloat) * mComponentCount;
 	SDL_assert(bufferOffset < mBufferSize);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = x;
-	bufferOffset += sizeof(GL_FLOAT);
+	bufferOffset += sizeof(GLfloat);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = y;
-	bufferOffset += sizeof(GL_FLOAT);
+	bufferOffset += sizeof(GLfloat);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = z;
-	bufferOffset += sizeof(GL_FLOAT);
+	bufferOffset += sizeof(GLfloat);
 	(*(GLfloat*)(mBuffer + bufferOffset)) = w;
 }
 

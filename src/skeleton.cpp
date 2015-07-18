@@ -1,4 +1,3 @@
-
 #include <list>
 #include <vector>
 #include <unordered_map>
@@ -205,7 +204,9 @@ void create_sprites(std::shared_ptr<Texture> sheet) {
 	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6*6, sheet));
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 6; j++) {
-			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, i, j));
+			float u = (float) i * 16.0f;
+			float v = (float) j * 16.0f;
+			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, u, v));
 			sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
 		}
 	}	
@@ -298,8 +299,8 @@ int main(int argc, char **argv) {
 				ServiceRegistry<RenderStateService>::initialise();
 				ServiceRegistry<SpriteService>::initialise();
 				renderer_setup();
-				create_background(background);
-				//			create_sprites(spritesheet);
+				//create_background(background);
+				create_sprites(spritesheet);
 #ifdef USE_GUI
 				ServiceRegistry<GuiService>::initialise();
 #endif
