@@ -80,6 +80,8 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 void update(double t, double dt) {
 	(void) t;
 	(void) dt;
+	ServiceCheckout<SpriteService> sprites;
+
 }
 
 void *malloc_shim(PHYSFS_uint64 size) {
@@ -198,7 +200,7 @@ void create_background(std::shared_ptr<Texture> background) {
 	return;
 }
 
-void create_sprites(std::shared_ptr<Texture> sheet) {
+std::weak_ptr<SpriteBatch> create_sprites(std::shared_ptr<Texture> sheet) {
 	ServiceCheckout<SpriteService> sprites;
 	RandomContext spriteRandom;
 	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6*6, sheet));
@@ -209,8 +211,8 @@ void create_sprites(std::shared_ptr<Texture> sheet) {
 			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, u, v));
 			sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
 		}
-	}	
-	return;
+	}
+	return batch;
 }
 
 void renderer_setup() {

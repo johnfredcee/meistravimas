@@ -52,7 +52,7 @@ std::string HashString::getString()
 
 Uint32 HashString::Hash(const char *str)
 {
-    Uint32 *s = (Uint32 *) str;
+    unsigned char *s = (unsigned char *) str;
 
     /*
      * FNV-1a hash each octet in the buffer
@@ -61,7 +61,7 @@ Uint32 HashString::Hash(const char *str)
     {
 
         /* xor the bottom with the current octet */
-        HashString::hval ^= (Uint32)(*s++);
+        HashString::hval ^= (uint32_t)(*s++);
 
         /* multiply by the 32 bit FNV magic prime mod 2^32 */
         HashString::hval *= FNV_32_PRIME;

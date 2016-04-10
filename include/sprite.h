@@ -97,7 +97,8 @@ public:
      * update all active sprites (deleting unreferenced ones)
      */
 	void update(double t, double dt);
-	
+
+	void apply(std::function<void(std::shared_ptr<Sprite>)> method);
 };
 
 class Sprite

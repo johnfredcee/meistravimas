@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <GL/glew.h>
@@ -40,6 +41,12 @@ SpriteService::SpriteBatchArray_t::iterator   SpriteService::batchWalker;
 Matrix44									  SpriteService::projection;
 
 
+/**
+ * @brief Called when sprite service is initialized
+ * @param self pointer to service singleton objectclang: cache cleared
+
+ * @return true if initalization successful
+ */
 bool SpriteService::initialise(SpriteService* self) {
 	(void) self;
 	ServiceCheckout<ProgramService> programs;
@@ -51,11 +58,27 @@ bool SpriteService::initialise(SpriteService* self) {
 }
 
 
+/**
+ * @brief Add a new batch of sprites to the service
+ * @param size Number of sprites in batch
+ * @param texture Texture sprites in batch are rendered from
+ * @return shared pointer to the batch
+ */
 std::shared_ptr<SpriteBatch> SpriteService::addBatch(Uint32 size, std::shared_ptr<Texture> texture) {
 	nextBatchId++;
 	std::shared_ptr<SpriteBatch> sprite_batch(std::make_shared<SpriteBatch>(nextBatchId, size, texture));
 	batches.push_back(sprite_batch);
 	return std::shared_ptr<SpriteBatch>(sprite_batch);
+}
+
+bool SpriteService::removeBatch(Uint32 id) {
+
+	auto batch_it =  std::find_if(batches.begin(), batches.end(), [id](SpriteBatchArray_t::value_type batch) -> bool { return batch->id == id; });
+	bool result = batch_it != batches.end();
+	if (!result) {
+		batches.erase(batch_it);
+	}
+	return result;
 }
 
 void SpriteService::beginBatchWalk() {
@@ -76,7 +99,6 @@ bool SpriteService::shutdown(SpriteService* self) {
 	(void) self;
 	return true;
 }
-
 
 // SpriteBatch methods
 SpriteBatch::SpriteBatch(Uint32 batchId, Uint32 count, std::shared_ptr<Texture> batchTexture) : texture(batchTexture), id(batchId), nSprites(count), nUsed(0) {
@@ -123,6 +145,10 @@ std::weak_ptr<Sprite>  SpriteBatch::addSprite(float x, float y, float width, flo
 	sprites.push_back(sprite);
 	nUsed++;
 	return std::weak_ptr<Sprite>(sprite);
+}
+
+void SpriteBatch::apply(std::function<void(std::shared_ptr<Sprite>)> method) {
+	std::for_each(sprites.begin(), sprites.end(), method);
 }
 
 void SpriteBatch::render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
@@ -194,4 +220,3 @@ void Sprite::setXY(float newX, float newY) {
 }
 
 }
-

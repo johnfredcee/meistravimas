@@ -36,7 +36,7 @@ bool ScriptingService::initialise(ScriptingService* self)
 	int scheme_ok =  scheme_init_custom_alloc(sc, SDL_malloc, SDL_free);
 	if(!scheme_ok) {
 		std::cerr << "Tiny scheme init failed" << std::endl;
-		return nullptr;
+		return false;
 	}
 	scheme_set_output_port_file(sc,stdout);
 	scheme_set_input_port_file(sc,stdin);	
