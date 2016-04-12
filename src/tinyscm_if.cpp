@@ -12,6 +12,7 @@
 extern "C"
 {
 	pointer run_test(scheme* sc, pointer args);
+	SDL_atomic_t schemeQuitAtomic;
 }
 
 namespace venk {
@@ -25,7 +26,7 @@ void load_scheme(scheme* sc, const std::string& fname) {
 		std::cerr << "Could not load " << fname << std::endl;
 		return;
 	}
-	SDL_RWops *rwop = SDL_RWFromMem((void*) source, length);		;
+	SDL_RWops *rwop = SDL_RWFromMem((void*) source, length);		
 	int i = ++(sc->file_i);
 	SDL_assert(i < MAXFIL);
 	sc->load_stack[i].kind = port_sdl|port_input;
@@ -92,6 +93,7 @@ int server(void *data) {
 }
 
 SDL_Thread* launch_server(scheme* sc) {
+	SDL_AtomicSet(&schemeQuitAtomic, 0);
 	SDL_Thread* threadID = SDL_CreateThread( server, "SchemePort", (void*) sc );
 	return threadID;
 }

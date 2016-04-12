@@ -44,6 +44,7 @@ typedef struct port {
 		} string;
 		struct {
 			 TCPsocket skt;
+			 SDLNet_SocketSet sktset;
 			 char *buffer;
 			 char *start;
 			 char *end;

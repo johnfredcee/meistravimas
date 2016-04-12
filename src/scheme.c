@@ -1449,6 +1449,8 @@ static port*  port_rep_from_tcp(scheme *sc, TCPsocket skt) {
 	pt->rep.net.start=pt->rep.net.buffer;
 	pt->rep.net.end=pt->rep.net.buffer;
 	pt->rep.net.skt = skt;
+	pt->rep.net.sktset = SDLNet_AllocSocketSet(1);
+	SDLNet_TCP_AddSocket(pt->rep.net.sktset, skt);
 	return pt;
 }
 
@@ -1537,7 +1539,9 @@ static void port_close(scheme *sc, pointer p, int flag) {
 		  }
 		  if (pt->kind&port_net) {
 			   sc->free(pt->rep.net.buffer);
-			   pt->rep.net.buffer = NULL;			   
+			   pt->rep.net.buffer = NULL;
+			   SDLNet_TCP_DelSocket(pt->rep.net.sktset, pt->rep.net.skt);
+			   SDLNet_FreeSocketSet(pt->rep.net.sktset);
 			   SDLNet_TCP_Close(pt->rep.net.skt);
 		  }
 		  if (pt->kind&port_sdl) {
@@ -1571,6 +1575,8 @@ static int inchar(scheme *sc) {
 	return c;
 }
 
+SDL_atomic_t schemeQuitAtomic;
+
 static int basic_inchar(port *pt) {
 	if(pt->kind & port_file) {
 		return fgetc(pt->rep.stdio.file);
@@ -1578,15 +1584,20 @@ static int basic_inchar(port *pt) {
 	if (pt->kind & port_net) {
 		 if (pt->rep.net.start == pt->rep.net.end)
 		 {
-			  int result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
-			  if (result <= 0) {
-				   fprintf(stderr,"Client closed connection\n");
-				   pt->kind |= port_saw_EOF;
-				   return EOF;
-			  }
-			  pt->rep.net.end++;
-			  if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
-				   pt->rep.net.end = pt->rep.net.buffer;
+			  int result = 0;
+			  while((SDL_AtomicGet(&schemeQuitAtomic) == 0) && (result == 0)) {
+				   if (SDLNet_CheckSockets(pt->rep.net.sktset, 1) == 1) {
+						int result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
+						if (result <= 0) {
+							 fprintf(stderr,"Client closed connection\n");
+							 pt->kind |= port_saw_EOF;
+							 return EOF;
+						}
+						pt->rep.net.end++;
+						if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
+							 pt->rep.net.end = pt->rep.net.buffer;						
+				   }
+			  };
 		 }
 		 int chin = *(pt->rep.net.start);
 		 pt->rep.net.start++;
@@ -4831,6 +4842,8 @@ void scheme_load_socket(scheme *sc, TCPsocket skt) {
 	sc->file_i=0;
 	sc->load_stack[0].kind=port_input|port_output|port_net;
 	sc->load_stack[0].rep.net.skt=skt;
+	sc->load_stack[0].rep.net.sktset = SDLNet_AllocSocketSet(1);
+	SDLNet_TCP_AddSocket(sc->load_stack[0].rep.net.sktset, skt);	
 	sc->load_stack[0].rep.net.buffer = (char*) sc->malloc(SOCKET_BUFFER_SIZE);
 	if (sc->load_stack[0].rep.net.buffer == NULL)
 		 return;

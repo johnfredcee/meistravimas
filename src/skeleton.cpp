@@ -322,34 +322,33 @@ int main(int argc, char **argv) {
 						
 						//Handle events on queue
 						SDL_PumpEvents();
-						while(SDL_PeepEvents(&e,1,SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
+						while(SDL_PeepEvents(&e,1,SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
 							//User requests quit
 							if(e.type == SDL_QUIT) {
 								quit = true;
 							}
 							// theoretically this code could be replaced by an event filter (TODO)
 							switch(e.type) {
-							case SDL_MOUSEWHEEL:
-							case SDL_MOUSEMOTION:
-							case SDL_MOUSEBUTTONUP:
-							case SDL_MOUSEBUTTONDOWN: {
-								SDL_SemWait(global_lock);
-								ServiceCheckout<MouseService> squeak;
-								squeak->mouse();
-								SDL_SemPost(global_lock);
-							}
-							break;
-							case SDL_KEYUP:
-							case SDL_KEYDOWN: {
-								SDL_SemWait(global_lock);
-								ServiceCheckout<KeyboardService> keyb;
-								keyb->keyboard();
-								SDL_SemPost(global_lock);
-							}
-							break;
-							default:
-								SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
-								break;
+								case SDL_MOUSEWHEEL:
+								case SDL_MOUSEMOTION:
+								case SDL_MOUSEBUTTONUP:
+								case SDL_MOUSEBUTTONDOWN: {
+									SDL_SemWait(global_lock);
+									ServiceCheckout<MouseService> squeak;
+									squeak->mouse();
+									SDL_SemPost(global_lock);
+								}
+									break;
+								case SDL_KEYUP:
+								case SDL_KEYDOWN: {
+									SDL_SemWait(global_lock);
+									ServiceCheckout<KeyboardService> keyb;
+									keyb->keyboard();
+									SDL_SemPost(global_lock);
+								}
+									break;
+								default:
+									break;
 							}
 						}
 					}
