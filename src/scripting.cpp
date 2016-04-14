@@ -55,6 +55,7 @@ bool ScriptingService::shutdown(ScriptingService* self)
 {
 	(void) self;
 	int server_exit;
+	kill_server();
 	SDL_WaitThread(server_thread, &server_exit);	
 	scheme_deinit(&tinyscm);	
     return true;

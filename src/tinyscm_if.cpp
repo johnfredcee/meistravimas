@@ -98,6 +98,11 @@ SDL_Thread* launch_server(scheme* sc) {
 	return threadID;
 }
 
+void kill_server() {
+	// signal that it's time to end
+	SDL_AtomicSet(&schemeQuitAtomic, 1);
+}
+		
 } // namespace venk
 
 extern SDL_sem* global_lock;

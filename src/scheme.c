@@ -1300,6 +1300,9 @@ static void finalize_cell(scheme *sc, pointer a) {
 			port_close(sc,a,port_input|port_output);
 		}
 		if(a->_object._port->kind&port_net) {
+			 SDLNet_TCP_DelSocket(a->_object._port->rep.net.sktset,
+								  a->_object._port->rep.net.skt);
+			 SDLNet_FreeSocketSet(a->_object._port->rep.net.sktset);			 
 			 SDLNet_TCP_Close(a->_object._port->rep.net.skt);
 			 sc->free(a->_object._port->rep.net.buffer);
 			 a->_object._port->rep.net.buffer = NULL;
@@ -1585,24 +1588,31 @@ static int basic_inchar(port *pt) {
 		 if (pt->rep.net.start == pt->rep.net.end)
 		 {
 			  int result = 0;
-			  while((SDL_AtomicGet(&schemeQuitAtomic) == 0) && (result == 0)) {
-				   if (SDLNet_CheckSockets(pt->rep.net.sktset, 1) == 1) {
-						int result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
-						if (result <= 0) {
-							 fprintf(stderr,"Client closed connection\n");
-							 pt->kind |= port_saw_EOF;
-							 return EOF;
-						}
-						pt->rep.net.end++;
-						if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
-							 pt->rep.net.end = pt->rep.net.buffer;						
-				   }
-			  };
+			  do {
+				   result = SDLNet_CheckSockets(pt->rep.net.sktset, 1);
+				   if ((result < 0) || (SDL_AtomicGet(&schemeQuitAtomic) != 0)) {
+						fprintf(stderr,"Client closed connection\n");
+						pt->kind |= port_saw_EOF;
+						return EOF;
+				   }				   									   
+			  } while (result != 1);
+			  result = SDLNet_TCP_Recv(pt->rep.net.skt, pt->rep.net.end, 1);
+			  if ((result <= 0) || (SDL_AtomicGet(&schemeQuitAtomic) != 0)) {
+				   fprintf(stderr,"Client closed connection\n");
+				   pt->kind |= port_saw_EOF;
+				   return EOF;
+			  }
+			  int rdin = *(pt->rep.net.end);
+			  fprintf(stderr, "|%c|", rdin);				   
+			  pt->rep.net.end++;
+			  if (pt->rep.net.end >=  pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
+				   pt->rep.net.end = pt->rep.net.buffer;				   
 		 }
 		 int chin = *(pt->rep.net.start);
 		 pt->rep.net.start++;
 		 if (pt->rep.net.start >= pt->rep.net.buffer + SOCKET_BUFFER_SIZE)
 			  pt->rep.net.start = pt->rep.net.buffer;
+		 fprintf(stderr, "<%c>", chin);
 		 return chin;
 	}
 	if (pt->kind & port_sdl)
