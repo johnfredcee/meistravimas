@@ -67,8 +67,11 @@ int server(void *data) {
 	}
 	/* This check the sd if there is a pending connection.
 	 * If there is one, accept that, and open a new socket for communicating */
-	while((csd = SDLNet_TCP_Accept(sd)) == nullptr) {
-		SDL_Delay(1);
+	while(((csd = SDLNet_TCP_Accept(sd)) == nullptr) && (SDL_AtomicGet(&schemeQuitAtomic) == 0)) { 
+		SDL_Delay(1);		
+	}
+	if (SDL_AtomicGet(&schemeQuitAtomic) != 0) {
+		goto forget_it;
 	}
 	/* Now we can communicate with the client using csd socket
 	 * sd will remain opened waiting other connections */
@@ -82,6 +85,7 @@ int server(void *data) {
 	scheme_load_string(sc, "(write \"SDL Scheme\") (newline)");
 	scheme_set_port_net(sc, csd);
 	scheme_load_socket(sc, csd);
+forget_it:
 	std::cout << "Terminate connection" << std::endl;
 	/* Close the client socket */
 	SDLNet_TCP_Close(csd);
