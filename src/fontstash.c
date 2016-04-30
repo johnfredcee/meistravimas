@@ -747,13 +747,13 @@ int fonsAddFont(FONScontext* stash, const char* name, const char* path)
 
 	// Read in the font data.
 	Uint64 length;
-	void * fontmem = get_resource_file("font", name, &length);
-	if (fontmem == NULL) goto error;
+	data = get_resource_file("fonts", path, &length);
+	if (data == NULL) goto error;
 
 	return fonsAddFontMem(stash, name, data, dataSize, 1);
 
 error:
-	if (fontmem) SDL_free(fontmem);
+	if (data) SDL_free(data);
 	return FONS_INVALID;
 }
 

@@ -51,6 +51,7 @@
 #include "oui.h"
 #include "gui.h"
 
+#define USE_GUI 1
 
 bool	quit = false;
 SDL_sem* global_lock = nullptr;
