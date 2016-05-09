@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#define NANOVG_GL3_IMPLEMENTATION
+	
 // Create flags
 
 enum NVGcreateFlags {

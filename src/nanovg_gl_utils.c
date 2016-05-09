@@ -18,6 +18,7 @@
 
 // Modified for SDL by John Connors johnc@yagc.ndo.co.uk
 
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <nanovg.h>

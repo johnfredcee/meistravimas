@@ -32,7 +32,6 @@
 #include "image.h"
 #include "mouse.h"
 #include "keyboard.h"
-#define NANOVG_GL3_IMPLEMENTATION
 #define BLENDISH_IMPLEMENTATION
 #define OUI_IMPLEMENTATION
 #include "nanovg.h"
@@ -126,7 +125,7 @@ typedef struct {
 
 /** backround test rectangle */
 void testrect(NVGcontext *vg, UIrect rect) {
-#if 0    
+#if 1    
     nvgBeginPath(vg);
     nvgRect(vg,rect.x+0.5,rect.y+0.5,rect.w-1,rect.h-1);
     nvgStrokeColor(vg,nvgRGBf(1,0,0));
@@ -882,7 +881,7 @@ bool GuiService::initialise(GuiService* self)
 	self->uictx = uiCreateContext(4096, 1<<20);
 	uiMakeCurrent(self->uictx);
 	uiSetHandler(ui_handler);
-	self->vg = nvgCreateGL2(NVG_ANTIALIAS);
+	self->vg = nvgCreateGL3(NVG_ANTIALIAS);
 	// TODO : via SDL :-)
     bndSetFont(nvgCreateFont(self->vg, "system", "DejaVuSans.ttf"));
     bndSetIconImage(nvgCreateImage(self->vg, "blender_icons16.png", 0));
@@ -899,7 +898,7 @@ bool GuiService::shutdown(GuiService* self)
 	ServiceCheckout<KeyboardService> keyb;
 	maus->observers.removeObserver(self->mausObserver);
 	keyb->observers.removeObserver(self->keybObserver);
-	nvgDeleteGL2(self->vg);
+	nvgDeleteGL3(self->vg);
 	uiDestroyContext(self->uictx);
 	return true;
 }

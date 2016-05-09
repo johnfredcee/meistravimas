@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 	
-#define NANOVG_GL2 1
 #define NVG_PI 3.14159265358979323846264338327f
 
 #ifdef _MSC_VER
