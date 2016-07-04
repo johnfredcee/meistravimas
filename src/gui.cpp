@@ -869,10 +869,20 @@ bool GuiService::render()
 {
 	const int w  = 640;
 	const int h = 480;
-	
+	glEnable(GL_STENCIL_TEST);
 	nvgBeginFrame(vg, guiWidth, guiHeight, 1.0f);
-	draw(w,h);
+
+    nvgResetTransform(vg);
+    nvgTranslate( vg, 300.0f, 300.0f );
+    nvgBeginPath( vg );
+    nvgRect( vg, -100, -25, 200, 50 );
+    nvgStrokeColor( vg, nvgRGBA( 255, 0, 0, 100 ) );
+    nvgStrokeWidth( vg, 1.0f );
+    nvgStroke( vg );
+
+	//draw(w,h);
  	nvgEndFrame(vg);	
+    glDisable(GL_STENCIL_TEST);
 	return true;
 }
 
@@ -881,7 +891,7 @@ bool GuiService::initialise(GuiService* self)
 	self->uictx = uiCreateContext(4096, 1<<20);
 	uiMakeCurrent(self->uictx);
 	uiSetHandler(ui_handler);
-	self->vg = nvgCreateGL3(NVG_ANTIALIAS);
+	self->vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 	// TODO : via SDL :-)
     bndSetFont(nvgCreateFont(self->vg, "system", "DejaVuSans.ttf"));
     bndSetIconImage(nvgCreateImage(self->vg, "blender_icons16.png", 0));

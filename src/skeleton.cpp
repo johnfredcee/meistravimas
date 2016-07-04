@@ -51,7 +51,7 @@
 #include "oui.h"
 #include "gui.h"
 
-#define USE_GUI 0
+#define USE_GUI 1
 
 bool	quit = false;
 SDL_sem* global_lock = nullptr;
@@ -68,7 +68,7 @@ void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
 	(void) alpha;
 	(void) window;
 
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);	
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);	
 	ServiceCheckout<SpriteService> sprites;
 	sprites->beginBatchWalk();
 	std::shared_ptr<SpriteBatch> batch = sprites->nextBatch();
@@ -125,7 +125,6 @@ std::shared_ptr<SDL_Window> create_window() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
  	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
@@ -307,6 +306,12 @@ int main(int argc, char **argv) {
 				create_sprites(spritesheet);
 #ifdef USE_GUI
 				ServiceRegistry<GuiService>::initialise();
+				{
+					ServiceCheckout<GuiService> gui;
+					int width, height;
+					SDL_GetWindowSize(window.get(), &width, &height);
+					gui->setCanvasDimensions(width, height);
+				}
 #endif
 				{
 					ServiceCheckout<ProgramService> programs;

@@ -27,6 +27,7 @@ bool RenderStateService::initialise(RenderStateService* self) {
 	return true;
 }
 
+
 bool RenderStateService::shutdown(RenderStateService* self) {
 	(void) self;
 	return true;
