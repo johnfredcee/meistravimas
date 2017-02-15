@@ -17,48 +17,54 @@
 namespace venk
 {
 
-bool KeyboardService::initialise(KeyboardService *self) {
+bool KeyboardService::initialise(KeyboardService *self)
+{
 
-	if (self != nullptr) {
-		self->state = new Keyboard();
-		for(int i = 0; i < MAXIMUM_KEYBOARD_KEYS; ++i) {
-			self->state->keys[i] = KEY_RELEASE;
-		}
+    if (self != nullptr)
+    {
+	self->state = new Keyboard();
+	for (int i = 0; i < MAXIMUM_KEYBOARD_KEYS; ++i)
+	{
+	    self->state->keys[i] = KEY_RELEASE;
 	}
-	return true;
+    }
+    return true;
 }
 
-bool KeyboardService::shutdown(KeyboardService *self) {
-	if (self != nullptr) {
-		delete self->state;
-	}	
-	return true;
+bool KeyboardService::shutdown(KeyboardService *self)
+{
+    if (self != nullptr)
+    {
+	delete self->state;
+    }
+    return true;
 }
 
 void KeyboardService::sample()
 {
- SDL_Event			event;
-  
-  while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP) != 0) {
-	  SDL_KeyboardEvent *keyEvent = (SDL_KeyboardEvent*)(&event);
-	  switch (event.type) {
-		  case SDL_KEYUP:
-			  state->keys[keyEvent->keysym.scancode] = KEY_RELEASE;
-			  observers.notify(&event);
-			  break;
-		  case SDL_KEYDOWN:
-			  state->keys[keyEvent->keysym.scancode] = KEY_PRESS;
-			  observers.notify(&event);
-			  break;
-	  }
-  }	
+    SDL_Event event;
+
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP) != 0)
+    {
+	SDL_KeyboardEvent *keyEvent = (SDL_KeyboardEvent *)(&event);
+	switch (event.type)
+	{
+	case SDL_KEYUP:
+	    state->keys[keyEvent->keysym.scancode] = KEY_RELEASE;
+	    observers.notify(&event);
+	    break;
+	case SDL_KEYDOWN:
+	    state->keys[keyEvent->keysym.scancode] = KEY_PRESS;
+	    observers.notify(&event);
+	    break;
+	}
+    }
 }
 
-const Keyboard& KeyboardService::keyboard()
+const Keyboard &KeyboardService::keyboard()
 {
-	sample();
-	return *state;
+    sample();
+    return *state;
 }
 
 }
-

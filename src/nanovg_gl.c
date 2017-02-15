@@ -16,8 +16,7 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <nanovg.h>

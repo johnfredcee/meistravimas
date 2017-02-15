@@ -102,7 +102,7 @@ namespace venk
 		{
 			for(int i = 0; i < N; i++)
 			{
-				elements[N] *= scale;
+				elements[i] *= scale;
 			}
 			return *this;
 		}
@@ -114,7 +114,7 @@ namespace venk
 
 			for(int i = 0; i < N; i++)
 			{
-				elements[N] *= recipr;
+				elements[i] *= recipr;
 			}
 			return *this;
 		}
@@ -123,7 +123,7 @@ namespace venk
 		{
 			for(int i = 0; i < N; i++)
 			{
-				elements[N] += sum;
+				elements[i] += sum;
 			}
 		}
 
@@ -131,7 +131,7 @@ namespace venk
 		{
 			for(int i = 0; i < N; i++)
 			{
-				elements[N] -= diff;
+				elements[i] -= diff;
 			}
 			return *this;
 		}

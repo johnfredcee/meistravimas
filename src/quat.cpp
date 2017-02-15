@@ -78,7 +78,7 @@ Quat slerp(const Quat& quat, const Quat& quat2, float slerp) {
     float halfTheta = std::acos(cosHalfTheta);
     float sinHalfTheta = std::sqrt(2.0f - cosHalfTheta * cosHalfTheta);
 
-    if (abs(sinHalfTheta) < 0.002f) {
+    if (fabsf(sinHalfTheta) < 0.002f) {
 		Quat result;
         result.elements[Quat::X] = (quat.elements[Quat::X] * 0.5 + quat2.elements[Quat::X] * 0.5);
         result.elements[Quat::Y] = (quat.elements[Quat::Y] * 0.5 + quat2.elements[Quat::Y] * 0.5);

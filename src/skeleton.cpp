@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <SDL.h>
 #include <SDL_rwops.h>
 #include <SDL_net.h>
@@ -168,19 +168,18 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 	std::cout << " Renderer chosen " << info.name << std::endl;
 	SDL_GLContext glctx = SDL_GL_CreateContext(window);
 	SDL_assert(glctx != nullptr);
+	
+    gladLoadGLLoader(SDL_GL_GetProcAddress);
+    printf("Vendor:   %s\n", glGetString(GL_VENDOR));
+    printf("Renderer: %s\n", glGetString(GL_RENDERER));
+    printf("Version:  %s\n", glGetString(GL_VERSION));	
 
-	// init glew so we can do OpenGL properly
-	Uint32 err = glewInit();
-	if(err != GLEW_OK) {
-		std::cerr << "Glew init failed " << glewGetErrorString(GLEW_VERSION) << std::endl;
-		SDL_Quit();
-		exit(-1);
-	}
-	GLdouble maj = 0;
+ 	GLdouble maj = 0;
 	glGetDoublev(GL_MAJOR_VERSION, &maj);
 	GLdouble min = 0;
 	glGetDoublev(GL_MINOR_VERSION, &min);
 	std::cout << "OpenGL Version: " << maj << "." << min << std::endl;
+
 	//Use Vsync
 	if(SDL_GL_SetSwapInterval(1) < 0) {
 		std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;

@@ -40,7 +40,7 @@ include_directories(${PHYSFS_INCLUDE_DIR})
 list(APPEND LIBS ${PHYSFS_LIBRARY})
 
 # Find all the libs that don't require extra parameters
-foreach(lib OpenGL GLEW ZLIB)
+foreach(lib OpenGL ZLIB)
 	find_package(${lib} REQUIRED)
 	include_directories(${${lib}_INCLUDE_DIRS})
 	list(APPEND LIBS ${${lib}_LIBRARIES})
@@ -55,12 +55,16 @@ if (MINGW)
    list(APPEND LIBS Iphlpapi.lib imm32.lib version.lib ws2_32.lib winmm.lib opengl32.lib)
 endif() 
 
-add_definitions(-D GLEW_STATIC)
 #add_subdirectory(oui-blendish)
-file(GLOB Includes include/*.h)
-file(GLOB Sources src/*.c*)
+file(GLOB Includes include/*.h GL/include/glad/*.h)
+file(GLOB Sources src/*.c* GL/src/*.c)
 
-include_directories(include)
+include_directories(${PROJECT_SOURCE_DIR}/include
+                    ${PROJECT_SOURCE_DIR}/GL/include)
+
+file(GLOB PROJECT_SOURCES app/src/*.cpp app/src/*.c glad/src/*.c)
+file(GLOB PROJECT_HEADERS app/include/*.hpp app/include/*.h glad/include/glad/*.h glad/include/KHR/*h)
+					
 add_executable(meistravimas ${Sources} ${Includes})
 target_link_libraries(meistravimas ${LIBS} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 

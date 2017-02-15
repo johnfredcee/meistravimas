@@ -12,43 +12,43 @@ class Keyboard;
 
 namespace venk
 {
+
 class Keyboard
 {
 
-	friend class KeyboardService;
-public:
-	int keys[MAXIMUM_KEYBOARD_KEYS];
+    friend class KeyboardService;
+
+  public:
+    int keys[MAXIMUM_KEYBOARD_KEYS];
 };
-	
-class KeyboardService : public Service< KeyboardService >
+
+class KeyboardService : public Service<KeyboardService>
 {
-public:
+  public:
+    typedef KeyboardService *ServicePtr_t;
 
-	typedef KeyboardService* ServicePtr_t;
+    Observable<KeyboardService> observers;
 
-	Observable<KeyboardService> observers;
-	
-	/**
-	 * Initialise the keyboard subsystem
-	 * @return true if successful
-	 */
-	static bool initialise(KeyboardService* self);
+    /**
+		* Initialise the keyboard subsystem
+		* @return true if successful
+		*/
+    static bool initialise(KeyboardService *self);
 
-	/** 
-     * Shutdown the keyboard subsystem
-     * @return true if successful
-     */
-	static bool shutdown(KeyboardService *self);
+    /** 
+		* Shutdown the keyboard subsystem
+		* @return true if successful
+		*/
+    static bool shutdown(KeyboardService *self);
 
-	void sample();
-	
-	const Keyboard& keyboard();
-	
-private:
+    void sample();
+
+    const Keyboard &keyboard();
+
+  private:
     /** The keyboard herself. */
-	Keyboard *state;
-
+    Keyboard *state;
 };
-#endif
 
 }
+#endif

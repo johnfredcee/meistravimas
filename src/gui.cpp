@@ -6,7 +6,7 @@
 #include <array>
 #include <functional>
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <SDL.h>
 #include <SDL_net.h>
 #include <SDL_opengl.h>

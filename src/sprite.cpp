@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_net.h>
