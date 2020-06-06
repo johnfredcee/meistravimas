@@ -82,7 +82,7 @@ namespace venk
 
 	Texture::~Texture()
 	{
-		SDL_DestroyTexture(texture_ptr);
+		
 	}
 
 }

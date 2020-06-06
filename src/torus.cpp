@@ -1,5 +1,6 @@
 
 #include <SDL.h>
+#include <SDL_stdinc.h>
 #include <SDL_opengl.h>
 #include <memory>
 #include "tuple.h"
@@ -7,6 +8,10 @@
 #include "threedee.h"
 #include "bufferbuilder.h"
 #include "torus.h"
+
+#ifndef M_PI
+#define M_PI (3.14159265f)
+#endif
 
 namespace venk
 {

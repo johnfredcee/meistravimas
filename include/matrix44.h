@@ -1,6 +1,10 @@
 #ifndef MATRIX44_H_INCLUDED
 #define MATRIX44_H_INCLUDED
 
+#ifndef M_PI
+#define M_PI (3.14159265f)
+#endif
+
 namespace venk {
 
 class Matrix44 : public Tuple<float, 16> {

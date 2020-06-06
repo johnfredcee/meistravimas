@@ -29,7 +29,7 @@ static Sint64 physfsrwops_size(SDL_RWops *rw) {
 	PHYSFS_File *handle = (PHYSFS_File *) rw->hidden.unknown.data1;
 	PHYSFS_sint64 len = PHYSFS_fileLength(handle);
 	if (len == -1) {
-		SDL_SetError("Can't find end of file: %s", PHYSFS_getLastError());
+		SDL_SetError("Can't find end of file: %s", PHYSFS_getErrorByCode( PHYSFS_getLastErrorCode() ));
 		return(-1);
 	} /* if */
 	return len;
