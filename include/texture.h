@@ -43,7 +43,6 @@ namespace venk
 		friend class Program;
 
 	private:
-		SDL_Texture*      texture_ptr;
 		GLuint            gl_texture;
 		
 	public:
@@ -56,12 +55,6 @@ namespace venk
 		 * Create a texture from a loaded image 
          */
 		Texture(const Image* image);
-
-		/**
-         * Test for validity 
-         */
-		bool isValid() const { return texture_ptr != nullptr; }
-		operator bool() const { return texture_ptr != nullptr; }
 
 		/**
          * Select the texture as current for operation 

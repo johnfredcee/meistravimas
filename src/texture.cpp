@@ -46,7 +46,7 @@ namespace venk
 	}
 
 	
-	Texture::Texture(const Image* image) : texture_ptr(nullptr)
+	Texture::Texture(const Image* image) 
 	{
 		SDL_assert(image != nullptr);
 		SDL_assert(image->getData() != nullptr);
