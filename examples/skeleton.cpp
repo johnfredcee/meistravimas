@@ -93,7 +93,7 @@ void *realloc_shim(void *mem, PHYSFS_uint64 size) {
 	return SDL_realloc(mem, (size_t) size);
 }
 
-int initPhysfs(char **argv) {
+ int initPhysfs(char **argv) {
 	PHYSFS_Allocator sdlAllocator;
 	sdlAllocator.Init = nullptr;
 	sdlAllocator.Deinit = nullptr;

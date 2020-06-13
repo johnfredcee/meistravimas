@@ -52,7 +52,7 @@ char *file_contents(const std::string& fileName, Uint64 *length) {
 			void* buf = SDL_malloc(size+1);
 			size_t read = SDL_RWread(rwops, buf, 1, size);
 			SDL_RWclose(rwops);
-			if(read == size) {
+			if(read == (std::size_t) size) {
 				*(((char*)buf) + size) = '\0';
 				*length = static_cast<Sint32>(size);
 				return (char*) buf;
