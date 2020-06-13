@@ -102,19 +102,19 @@ int initPhysfs(char **argv) {
 	sdlAllocator.Free = SDL_free;
 	int physfsok = PHYSFS_init(argv[0]);
 	if(!physfsok) {
-		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
 		return physfsok;
 	}
 	PHYSFS_setAllocator(&sdlAllocator);
 	physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
 	if(!physfsok) {
-		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
 		return physfsok;
 	}
 	std::cout << "Resource path is: " << getResourcePath() << std::endl;
 	PHYSFS_mount(getResourcePath().c_str(), nullptr, 1);
 	if(!physfsok) {
-		std::cerr << "PhysicsFS Init error" << PHYSFS_getLastError() << std::endl;
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()  ) );
 	}
 	return physfsok;
 }
@@ -139,7 +139,7 @@ std::shared_ptr<SDL_Window> create_window() {
 	                                   SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL),
 	                                   window_deleter);
 	if(!window) {
-		std::cerr << "Unable to create SDL_Window" << std::endl;
+		SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Unable to create SDL_Window" );
 	}
 	return window;
 }
@@ -150,11 +150,11 @@ std::shared_ptr<SDL_Renderer> create_renderer(SDL_Window* window) {
 		if(r) SDL_DestroyRenderer(r);
 	};
 	Uint32 n_drivers = SDL_GetNumRenderDrivers();
-	std::cout << n_drivers << " render drivers available" << std::endl;
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,  "%d render drivers available", n_drivers);
 	for(Uint32 i = 0; i < n_drivers; i++) {
 		SDL_RendererInfo info;
 		SDL_GetRenderDriverInfo(i, &info);
-		std::cout << i << " " << info.name << std::endl;
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%d %s", i, info.name);
 	}
 	Uint32 flags = SDL_RENDERER_ACCELERATED  |  SDL_RENDERER_TARGETTEXTURE;
 	std::shared_ptr<SDL_Renderer> renderer(SDL_CreateRenderer(window, -1, flags),  renderer_deleter);
@@ -165,24 +165,24 @@ SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
 	// we created renderer, get info about it
 	SDL_RendererInfo info;
 	SDL_GetRendererInfo(renderer, &info);
-	std::cout << " Renderer chosen " << info.name << std::endl;
+	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Renderer chosen %s ", info.name);
 	SDL_GLContext glctx = SDL_GL_CreateContext(window);
 	SDL_assert(glctx != nullptr);
 	
     gladLoadGLLoader(SDL_GL_GetProcAddress);
-    printf("Vendor:   %s\n", glGetString(GL_VENDOR));
-    printf("Renderer: %s\n", glGetString(GL_RENDERER));
-    printf("Version:  %s\n", glGetString(GL_VERSION));	
+    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Vendor:   %s\n", glGetString(GL_VENDOR));
+    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Renderer: %s\n", glGetString(GL_RENDERER));
+    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Version:  %s\n", glGetString(GL_VERSION));	
 
  	GLdouble maj = 0;
 	glGetDoublev(GL_MAJOR_VERSION, &maj);
 	GLdouble min = 0;
 	glGetDoublev(GL_MINOR_VERSION, &min);
-	std::cout << "OpenGL Version: " << maj << "." << min << std::endl;
+	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,  "OpenGL Version: %1d.%1d",  (int) maj, (int) min);
 
 	//Use Vsync
 	if(SDL_GL_SetSwapInterval(1) < 0) {
-		std::cerr <<  "Warning: Unable to set VSync! SDL Error: " << SDL_GetError() << std::endl;
+		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Warning: Unable to set VSync! SDL Error: %s. ",  SDL_GetError() );
 	}
 	// Enable depth testing
 	glDisable(GL_DEPTH_TEST);
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
 		(void) argc;
 		(void) argv;
 		if(SDLNet_Init() < 0) {
-			std::cerr << "SDLNet_Init: " << SDLNet_GetError() << std::endl;
+			SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "SDLNet_Init: %s ", SDLNet_GetError());
 			return -1;
 		}
 		initPhysfs(argv);
@@ -384,7 +384,7 @@ int main(int argc, char **argv) {
 		SDLNet_Quit();
 		int phsyfhshutdown = PHYSFS_deinit();
 		if(!phsyfhshutdown) {
-			std::cerr << "Physfs shutdown failed:" << PHYSFS_getLastError() << std::endl;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Physfs shutdown failed:  %s ", PHYSFS_getErrorByCode( PHYSFS_getLastErrorCode() ) );
 		}
 		SDL_Quit();
 		return 0;
