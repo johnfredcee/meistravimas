@@ -57,6 +57,7 @@
 using namespace std;
 using namespace venk;
 
+SDL_sem* global_lock = nullptr;
 int screen_width = 960;
 int screen_height = 540;
 shared_ptr<SDL_Window> window;

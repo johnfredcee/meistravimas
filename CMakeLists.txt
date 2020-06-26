@@ -77,3 +77,5 @@ file(GLOB IMGUI_INCLUDES examples/imgui/*.h)
 add_executable(tilebased examples/tilebased.cpp ${IMGUI_SOURCES} ${IMGUI_INCLUDES})
 target_include_directories(tilebased PRIVATE examples/imgui)
 target_link_libraries(tilebased meistravimas)
+
+add_custom_target(examples skeleton tilebased)
