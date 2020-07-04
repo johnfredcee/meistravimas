@@ -161,29 +161,29 @@ static float nvg__normalize(float *x, float* y)
 static void nvg__deletePathCache(NVGpathCache* c)
 {
 	if (c == NULL) return;
-	if (c->points != NULL) free(c->points);
-	if (c->paths != NULL) free(c->paths);
-	if (c->verts != NULL) free(c->verts);
-	free(c);
+	if (c->points != NULL) SDL_free(c->points);
+	if (c->paths != NULL) SDL_free(c->paths);
+	if (c->verts != NULL) SDL_free(c->verts);
+	SDL_free(c);
 }
 
 static NVGpathCache* nvg__allocPathCache(void)
 {
-	NVGpathCache* c = (NVGpathCache*)malloc(sizeof(NVGpathCache));
+	NVGpathCache* c = (NVGpathCache*)SDL_malloc(sizeof(NVGpathCache));
 	if (c == NULL) goto error;
 	memset(c, 0, sizeof(NVGpathCache));
 
-	c->points = (NVGpoint*)malloc(sizeof(NVGpoint)*NVG_INIT_POINTS_SIZE);
+	c->points = (NVGpoint*)SDL_malloc(sizeof(NVGpoint)*NVG_INIT_POINTS_SIZE);
 	if (!c->points) goto error;
 	c->npoints = 0;
 	c->cpoints = NVG_INIT_POINTS_SIZE;
 
-	c->paths = (NVGpath*)malloc(sizeof(NVGpath)*NVG_INIT_PATHS_SIZE);
+	c->paths = (NVGpath*)SDL_malloc(sizeof(NVGpath)*NVG_INIT_PATHS_SIZE);
 	if (!c->paths) goto error;
 	c->npaths = 0;
 	c->cpaths = NVG_INIT_PATHS_SIZE;
 
-	c->verts = (NVGvertex*)malloc(sizeof(NVGvertex)*NVG_INIT_VERTS_SIZE);
+	c->verts = (NVGvertex*)SDL_malloc(sizeof(NVGvertex)*NVG_INIT_VERTS_SIZE);
 	if (!c->verts) goto error;
 	c->nverts = 0;
 	c->cverts = NVG_INIT_VERTS_SIZE;
@@ -205,7 +205,7 @@ static void nvg__setDevicePixelRatio(NVGcontext* ctx, float ratio)
 NVGcontext* nvgCreateInternal(NVGparams* params)
 {
 	FONSparams fontParams;
-	NVGcontext* ctx = (NVGcontext*)malloc(sizeof(NVGcontext));
+	NVGcontext* ctx = (NVGcontext*)SDL_malloc(sizeof(NVGcontext));
 	int i;
 	if (ctx == NULL) goto error;
 	memset(ctx, 0, sizeof(NVGcontext));
@@ -214,7 +214,7 @@ NVGcontext* nvgCreateInternal(NVGparams* params)
 	for (i = 0; i < NVG_MAX_FONTIMAGES; i++)
 		ctx->fontImages[i] = 0;
 
-	ctx->commands = (float*)malloc(sizeof(float)*NVG_INIT_COMMANDS_SIZE);
+	ctx->commands = (float*)SDL_malloc(sizeof(float)*NVG_INIT_COMMANDS_SIZE);
 	if (!ctx->commands) goto error;
 	ctx->ncommands = 0;
 	ctx->ccommands = NVG_INIT_COMMANDS_SIZE;
@@ -263,7 +263,7 @@ void nvgDeleteInternal(NVGcontext* ctx)
 {
 	int i;
 	if (ctx == NULL) return;
-	if (ctx->commands != NULL) free(ctx->commands);
+	if (ctx->commands != NULL) SDL_free(ctx->commands);
 	if (ctx->cache != NULL) nvg__deletePathCache(ctx->cache);
 
 	if (ctx->fs)
@@ -279,7 +279,7 @@ void nvgDeleteInternal(NVGcontext* ctx)
 	if (ctx->params.renderDelete != NULL)
 		ctx->params.renderDelete(ctx->params.userPtr);
 
-	free(ctx);
+	SDL_free(ctx);
 }
 
 void nvgBeginFrame(NVGcontext* ctx, int windowWidth, int windowHeight, float devicePixelRatio)
@@ -760,7 +760,7 @@ NVGpaint nvgLinearGradient(NVGcontext* ctx,
 	float dx, dy, d;
 	const float large = 1e5;
 	NVG_NOTUSED(ctx);
-	memset(&p, 0, sizeof(p));
+	SDL_memset(&p, 0, sizeof(p));
 
 	// Calculate transform aligned to the line
 	dx = ex - sx;

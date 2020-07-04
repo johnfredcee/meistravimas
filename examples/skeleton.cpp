@@ -242,6 +242,7 @@ void update_and_render(SDL_Window* window, SDL_Renderer* renderer,
 	accumulator += frameTime;
 	while(accumulator >= dt) {
 		SDL_SemWait(global_lock);
+		// update
 		update(t, dt);
 		SDL_SemPost(global_lock);
 		t += dt;
@@ -249,7 +250,7 @@ void update_and_render(SDL_Window* window, SDL_Renderer* renderer,
 	}
 	const double alpha = accumulator / dt;
 	SDL_SemWait(global_lock);
-	
+	// render
 	render(1.0 - alpha, window, renderer);
 #ifdef USE_GUI
 	{

@@ -892,7 +892,6 @@ bool GuiService::initialise(GuiService* self)
 	uiMakeCurrent(self->uictx);
 	uiSetHandler(ui_handler);
 	self->vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-	// TODO : via SDL :-)
     bndSetFont(nvgCreateFont(self->vg, "system", "DejaVuSans.ttf"));
     bndSetIconImage(nvgCreateImage(self->vg, "blender_icons16.png", 0));
 	ServiceCheckout<MouseService> maus;

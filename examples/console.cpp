@@ -17,11 +17,6 @@
 #include <scheme-private.h>
 #include <res_path.h>
 
-#define IMGUI_IMPL_OPENGL_LOADER_GLAD 1
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_opengl3.h"
-
 #include "tuple.h"
 #include "twodee.h"
 #include "threedee.h"
@@ -53,6 +48,8 @@
 #include "tinyscm_if.h"
 #include "picojson.h"
 #include "jsonread.h"
+#include "gui.h"
+#include "font.h"
 
 using namespace std;
 using namespace venk;
@@ -143,26 +140,6 @@ SDL_GLContext opengl_setup(SDL_Renderer *renderer, SDL_Window *window)
 	return context;
 }
 
-void imgui_setup(SDL_Window *window, SDL_GLContext context)
-{
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
-	const char *glsl_version = "#version 330";
-
-	// Setup Platform/Renderer bindings
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
-	ImGui_ImplOpenGL3_Init(glsl_version);
-}
-
 void *malloc_shim(PHYSFS_uint64 size)
 {
 	return SDL_malloc((size_t)size);
@@ -172,14 +149,6 @@ void *realloc_shim(void *mem, PHYSFS_uint64 size)
 {
 	return SDL_realloc(mem, (size_t)size);
 }
-
-// std::string getResourcePath()
-// {
-// 	char* base_path = SDL_GetBasePath();
-//     std::string  fullPath = base_path;
-// 	SDL_free(base_path);
-// 	return fullPath;
-// }
 
 int initPhysfs(char **argv)
 {
@@ -196,7 +165,7 @@ int initPhysfs(char **argv)
 		return physfsok;
 	}
 	PHYSFS_setAllocator(&sdlAllocator);
-	physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
+	physfsok = PHYSFS_setSaneConfig("yagc", "console", "ZIP", 0, 0);
 	if (!physfsok)
 	{
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
@@ -246,24 +215,24 @@ int main(int argc, char *argv[])
 	// setup OpenGL contezt
 	context = opengl_setup(renderer.get(), window.get());
 
-	imgui_setup(window.get(), context);
 	// Now, we need keyboard and mouse
 	ServiceRegistry<MouseService>::initialise();
 	ServiceRegistry<KeyboardService>::initialise();
+
 	ServiceRegistry<ScriptingService>::initialise();
 	ServiceRegistry<ImageService>::initialise();
+	ServiceRegistry<GuiService>::initialise();
+	ServiceRegistry<FontService>::initialise();
 
 	// Disable depth test and face culling.
-	// glDisable(GL_DEPTH_TEST);
-	// glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
 
-	//int width, height;
-	// SDL_GetWindowSize(window.get(), &width, &height);
-	// glViewport(0, 0, width, height);
-	// glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	int width, height;
+	SDL_GetWindowSize(window.get(), &width, &height);
+	glViewport(0, 0, width, height);
+	glClearColor(Colors::cornflowerblue(0),  Colors::cornflowerblue(1), Colors::cornflowerblue(2), 0.0f);
 
 	Uint32 currentTime = SDL_GetTicks();
 	Uint32 lastTime = currentTime;
@@ -273,19 +242,7 @@ int main(int argc, char *argv[])
 	// Our state
 	bool show_demo_window = true;
 	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-	{
-		ServiceCheckout<ImageService> images;
-		images->loadImage("ld-items-0.png");
-		images->loadImage("ld-items-1.png");
-		images->loadImage("ld-terrain-0.png");
-		images->loadImage("ld-terrain-1.png");
-		picojson::value items0 = read_json("ld-items-0.json");
-		picojson::value items1 = read_json("ld-items-1.json");
-		picojson::value terrain0 = read_json("ld-terrain-0.json");
-		picojson::value terrain1 = read_json("ld-terrain-1.json");
-	}
 	SDL_Event event;
 	bool quit = false;
 	while (!quit)
@@ -307,37 +264,14 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		// Start the Dear ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame(window.get());
-		ImGui::NewFrame();
-		ImGui::Begin("Hello World");
-		ImGui::End();
-		ImGui::Render();
-
-		//     SDL_SetRenderDrawColor(renderer.get(), 0, 0, 0, 0);
-		//     SDL_RenderClear(renderer.get());
-
-		//     SDL_SetRenderDrawColor(renderer.get(), 255, 0, 0, 255);
-		//     SDL_Rect rect;
-		//     rect.x = 100;
-		//     rect.y = 100;
-		//     rect.w = 100;
-		//     rect.h = 100;
-		//     SDL_RenderDrawRect(renderer.get(), &rect);
-		//     SDL_RenderPresent(renderer.get());
-		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window.get());
 	}
 
 	// Cleanup
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
-
+	ServiceRegistry<FontService>::shutdown();
+	ServiceRegistry<GuiService>::shutdown();
 	ServiceRegistry<ImageService>::shutdown();
 	ServiceRegistry<ScriptingService>::shutdown();
 

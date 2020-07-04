@@ -18,6 +18,7 @@ namespace venk {
 class Program;
 
 class GuiService : public Service<GuiService> {
+	friend class FontService;
 private:
 	int guiWidth;
 	int guiHeight;

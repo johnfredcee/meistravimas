@@ -48,7 +48,7 @@ NVGLUframebuffer* nvgluCreateFramebuffer(NVGcontext* ctx, int w, int h, int imag
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &defaultFBO);
 	glGetIntegerv(GL_RENDERBUFFER_BINDING, &defaultRBO);
 
-	fb = (NVGLUframebuffer*)malloc(sizeof(NVGLUframebuffer));
+	fb = (NVGLUframebuffer*)SDL_malloc(sizeof(NVGLUframebuffer));
 	if (fb == NULL) goto error;
 	memset(fb, 0, sizeof(NVGLUframebuffer));
 
@@ -111,7 +111,7 @@ void nvgluDeleteFramebuffer(NVGcontext* ctx, NVGLUframebuffer* fb)
 	fb->rbo = 0;
 	fb->texture = 0;
 	fb->image = -1;
-	free(fb);
+	SDL_free(fb);
 #else
 	NVG_NOTUSED(ctx);
 	NVG_NOTUSED(fb);

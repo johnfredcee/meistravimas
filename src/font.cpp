@@ -24,6 +24,8 @@
 #include "scripting.h"
 #include "tinyscm_if.h"
 #include "image.h"
+#include "nanovg.h"
+#include "gui.h"
 #include "font.h"
 
 namespace venk {
@@ -32,6 +34,8 @@ namespace venk {
 bool FontService::initialise(FontService* self)
 {
 	(void) self;
+	ServiceCheckout<GuiService> gui;
+	self->vg = gui->vg;
 	// ServiceCheckout<ScriptingService> scripting;
 	// scheme* sc = scripting->get_scheme();
 	// register_font_functions(sc);
@@ -44,9 +48,40 @@ bool FontService::shutdown(FontService* self) {
 	return true;
 }
 
+int FontService::createFont(const char* name, const char* filename)
+{
+	return ::nvgCreateFont(vg, name, filename);
+}
+
+void FontService::getFontMetrics(float* ascender, float* descender, float* lineh)
+{
+	return ::nvgTextMetrics(vg, ascender, descender, lineh);
+}
+
+int FontService::findFontByName(const char* name)
+{
+	return ::nvgFindFont(vg, name);
+}
+
+void FontService::setCurrentFont(int font)
+{
+	::nvgFontFaceId(vg, font);
+}
+
+std::shared_ptr<FontService::Bounds> FontService::getTextBounds(float x, float y, const char* string, const char* end)
+{
+	auto result = std::make_shared<FontService::Bounds>();
+	::nvgTextBounds(vg, x, y, string, end, (float*) result.get());
+	return result;
+}
+
+void FontService::drawText(float x, float y, const char* string, const char* end)
+{
+	::nvgText(vg, x, y, string, end);
+}
 
 // -------------------- Font methods --------------------
-
+#if 0
 Font::Font(const std::string& fontName) {
 	std::string fullFileName =  "fonts/" + fontName;
 	SDL_RWops *rwops =  PHYSFSRWOPS_openRead(fullFileName.c_str());
@@ -159,5 +194,5 @@ int Font::get_glyph_box(int glyph_index, int& x0, int& y0, int& x1, int& y1) {
 Font::~Font() {
 	SDL_free(buf);
 }
-
+#endif
 }

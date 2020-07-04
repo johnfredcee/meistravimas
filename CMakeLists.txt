@@ -72,6 +72,9 @@ target_include_directories(meistravimas PUBLIC ${INCS})
 add_executable(skeleton examples/skeleton.cpp)
 target_link_libraries(skeleton meistravimas)
 
+add_executable(console examples/console.cpp)
+target_link_libraries(console meistravimas)
+
 file(GLOB IMGUI_SOURCES examples/imgui/*.cpp)
 file(GLOB IMGUI_INCLUDES examples/imgui/*.h)
 add_executable(tilebased examples/tilebased.cpp ${IMGUI_SOURCES} ${IMGUI_INCLUDES})
