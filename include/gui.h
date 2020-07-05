@@ -45,9 +45,14 @@ public:
 	}
 
 	
+	/* begin gui rendering (for direct nvg twiddling) */
+	void begin_frame(int width, int height);
+	void end_frame();
+
 	/* render the gui from the root, down */
-	bool render();
-	
+	bool render(int width = -1, int height = -1);
+
+
 protected:
 	
 	int keybObserver;

@@ -224,6 +224,13 @@ int main(int argc, char *argv[])
 	ServiceRegistry<GuiService>::initialise();
 	ServiceRegistry<FontService>::initialise();
 
+	ServiceCheckout<GuiService> gui;
+	ServiceCheckout<FontService> fonts;
+
+	auto cozetteFont = fonts->createFont("cozette", "CozetteVector.ttf");
+	fonts->setCurrentFont(cozetteFont);
+	auto metrics = fonts->getFontMetrics();
+
 	// Disable depth test and face culling.
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -266,6 +273,10 @@ int main(int argc, char *argv[])
 
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
+		gui->begin_frame(width, height);
+		char* message = "Hello World";
+		fonts->drawText(20, 20, message, message + 12);
+		gui->end_frame();
 		SDL_GL_SwapWindow(window.get());
 	}
 

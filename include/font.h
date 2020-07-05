@@ -17,6 +17,13 @@ public:
 		float maxy;
 	};
 
+	struct Metrics
+	{
+		float ascender;
+		float descender;
+		float lineh;
+	};
+
 	typedef FontService* ServicePtr_t;
 
 	static bool initialise(FontService* self);
@@ -27,7 +34,7 @@ public:
 
 	int findFontByName(const char* name);
 
-	void getFontMetrics(float* ascender, float* descender, float* lineh);
+	std::shared_ptr<Metrics> getFontMetrics();
 
 	void setCurrentFont(int font);
 

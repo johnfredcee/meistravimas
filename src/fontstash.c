@@ -195,7 +195,7 @@ int fons__tt_getGlyphKernAdvance(FONSttFontImpl *font, int glyph1, int glyph2)
 #endif
 
 #ifndef FONS_SCRATCH_BUF_SIZE
-#	define FONS_SCRATCH_BUF_SIZE 16000
+#	define FONS_SCRATCH_BUF_SIZE 104960
 #endif
 #ifndef FONS_HASH_LUT_SIZE
 #	define FONS_HASH_LUT_SIZE 256
@@ -579,6 +579,29 @@ static void fons__addWhiteRect(FONScontext* stash, int w, int h)
 	stash->dirtyRect[3] = fons__maxi(stash->dirtyRect[3], gy+h);
 }
 
+void nvgHandleFonsErrorInternal(void *uptr, int error, int val)
+{
+	const char *message;
+	switch (error)
+	{
+	case FONS_ATLAS_FULL:
+		message = "Font Atlas Full"; 
+		break;
+	case FONS_SCRATCH_FULL:
+		message = "Font scratch memory full: bump up FONS_SCRATCH_BUF_SIZE";
+		break;
+	case FONS_STATES_OVERFLOW:
+		message = "Fons states overflow: bump up FONS_MAX_STATES";
+		break;
+	case FONS_STATES_UNDERFLOW:
+		message = "Fons states underflow.";
+		break;	
+	default:
+		break;
+	}
+	SDL_LogCritical(SDL_LOG_CATEGORY_SYSTEM, "Fons Error %s (%d) @ %p : val %d ", message, error, uptr, val);
+}
+
 FONScontext* fonsCreateInternal(FONSparams* params)
 {
 	FONScontext* stash = NULL;
@@ -589,6 +612,7 @@ FONScontext* fonsCreateInternal(FONSparams* params)
 	memset(stash, 0, sizeof(FONScontext));
 
 	stash->params = *params;
+	stash->handleError = nvgHandleFonsErrorInternal;
 
 	// Allocate scratch buffer.
 	stash->scratch = (unsigned char*)SDL_malloc(FONS_SCRATCH_BUF_SIZE);
@@ -629,7 +653,6 @@ FONScontext* fonsCreateInternal(FONSparams* params)
 
 	fonsPushState(stash);
 	fonsClearState(stash);
-
 	return stash;
 
 error:

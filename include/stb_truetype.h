@@ -469,7 +469,7 @@ int main(int arg, char **argv)
 
    #ifndef STBTT_assert
    #include <assert.h>
-   #define STBTT_assert(x)    assert(x)
+   #define STBTT_assert(x)    SDL_assert(x)
    #endif
 
    #ifndef STBTT_strlen
@@ -2863,7 +2863,7 @@ static stbtt__active_edge *stbtt__new_active(stbtt__hheap *hh, stbtt__edge *e, i
    z->ey = e->y1;
    z->next = 0;
    z->direction = e->invert ? 1 : -1;
-   return z;
+   return z;	
 }
 #elif STBTT_RASTERIZER_VERSION == 2
 static stbtt__active_edge *stbtt__new_active(stbtt__hheap *hh, stbtt__edge *e, int off_x, float start_point, void *userdata)

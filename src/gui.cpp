@@ -865,12 +865,25 @@ bool GuiService::keyboard(SDL_Event* event)
 	return true;
 }
 
-bool GuiService::render()
+
+void GuiService::begin_frame(int width, int height)
 {
-	const int w  = 640;
-	const int h = 480;
 	glEnable(GL_STENCIL_TEST);
-	nvgBeginFrame(vg, guiWidth, guiHeight, 1.0f);
+	::nvgBeginFrame(vg, width, height, 1.0f);
+}
+
+void GuiService::end_frame()
+{
+ 	::nvgEndFrame(vg);	
+    glDisable(GL_STENCIL_TEST);
+}
+
+bool GuiService::render(int width, int height)
+{
+	width = width == -1 ? guiWidth : width;
+	height = height == -1 ? guiHeight : height;
+
+	begin_frame(width, height);
 
     nvgResetTransform(vg);
     nvgTranslate( vg, 300.0f, 300.0f );
@@ -881,8 +894,7 @@ bool GuiService::render()
     nvgStroke( vg );
 
 	//draw(w,h);
- 	nvgEndFrame(vg);	
-    glDisable(GL_STENCIL_TEST);
+	end_frame();
 	return true;
 }
 

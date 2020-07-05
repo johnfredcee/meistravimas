@@ -53,9 +53,11 @@ int FontService::createFont(const char* name, const char* filename)
 	return ::nvgCreateFont(vg, name, filename);
 }
 
-void FontService::getFontMetrics(float* ascender, float* descender, float* lineh)
+std::shared_ptr<FontService::Metrics> FontService::getFontMetrics()
 {
-	return ::nvgTextMetrics(vg, ascender, descender, lineh);
+	auto result = std::make_shared<FontService::Metrics>();
+	::nvgTextMetrics(vg, &result->ascender, &result->descender, &result->lineh);
+	return result;
 }
 
 int FontService::findFontByName(const char* name)
