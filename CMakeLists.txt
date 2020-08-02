@@ -47,13 +47,13 @@ foreach(lib OpenGL ZLIB)
 	add_definitions(${${lib}_DEFINITIONS})
 endforeach(lib)
 
-#if (WIN32)
-#   list(APPEND LIBS Iphlpapi.lib ws2_32.lib winmm.lib imm32.lib kernel32.lib user32.lib gdi32.lib version.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib opengl32.lib)
-#endif() 
-
-if (MINGW)
-   list(APPEND LIBS Iphlpapi.lib imm32.lib version.lib ws2_32.lib winmm.lib opengl32.lib)
+if (WIN32)
+   list(APPEND LIBS Iphlpapi.lib ws2_32.lib winmm.lib imm32.lib kernel32.lib user32.lib gdi32.lib version.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib opengl32.lib)
 endif() 
+
+# if (MINGW)
+#    list(APPEND LIBS Iphlpapi.lib imm32.lib version.lib ws2_32.lib winmm.lib opengl32.lib)
+# endif() 
 
 #add_subdirectory(oui-blendish)
 file(GLOB Includes include/*.h GL/include/glad/*.h)

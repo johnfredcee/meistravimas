@@ -48,159 +48,45 @@
 #include "tinyscm_if.h"
 #include "picojson.h"
 #include "jsonread.h"
-#include "gui.h"
+#include "canvas.h"
 #include "font.h"
+#include "context.h"
+#include "textedit_if.h"
+#include "textedit.h"
 
 using namespace std;
 using namespace venk;
 
-SDL_sem* global_lock = nullptr;
+SDL_sem *global_lock = nullptr;
 int screen_width = 960;
 int screen_height = 540;
 shared_ptr<SDL_Window> window;
 shared_ptr<SDL_Renderer> renderer;
 static SDL_GLContext context;
-static const char *title = "OpenGL 3.3";
-
-shared_ptr<SDL_Window> create_window(const char *caption)
-{
-
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-	// create window
-	auto window_deleter = [](SDL_Window *w) {
-		if (w)
-			SDL_DestroyWindow(w);
-	};
-	shared_ptr<SDL_Window> window(SDL_CreateWindow(caption,
-												   SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-												   screen_width, screen_height,
-												   SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL),
-								  window_deleter);
-	if (!window)
-	{
-	 	SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Unable to create SDL_Window" );
-		SDL_Quit();
-	}
-	return window;
-}
-
-std::shared_ptr<SDL_Renderer> create_renderer(SDL_Window *window)
-{
-	// we created window, create renderer
-	auto renderer_deleter = [](SDL_Renderer *r) {
-		if (r)
-			SDL_DestroyRenderer(r);
-	};
-	Uint32 n_drivers = SDL_GetNumRenderDrivers();
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,  "%d render drivers available", n_drivers);
-	for (Uint32 i = 0; i < n_drivers; i++)
-	{
-		SDL_RendererInfo info;
-		SDL_GetRenderDriverInfo(i, &info);
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%d %s", i, info.name);
-	}
-	Uint32 flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE;
-	shared_ptr<SDL_Renderer> renderer(SDL_CreateRenderer(window, -1, flags), renderer_deleter);
-	if (!renderer)
-	{
-		std::cerr << "Unable to create SDL_Renderer" << endl;
-		SDL_Quit();
-	}
-	return renderer;
-}
-
-SDL_GLContext opengl_setup(SDL_Renderer *renderer, SDL_Window *window)
-{
-	SDL_GLContext context = SDL_GL_CreateContext(window);
-	SDL_GL_MakeCurrent(window, context);
-	std::cout << "OpenGL loading" << std::endl;
-	int result = gladLoadGLLoader(SDL_GL_GetProcAddress);
-	if (result == 0)
-	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_SYSTEM, "OpenGL loader failed");
-		SDL_Quit();
-	}
-	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Vendor:   %s\n", glGetString(GL_VENDOR));
-    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Renderer: %s\n", glGetString(GL_RENDERER));
-    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Version:  %s\n", glGetString(GL_VERSION));	
-	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "GLSL Version: %s.", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-	// Use v-sync
-	SDL_GL_SetSwapInterval(1);
-	SDL_assert(context != nullptr);
-	SDL_RenderSetLogicalSize(renderer, screen_width, screen_height);
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-	return context;
-}
-
-void *malloc_shim(PHYSFS_uint64 size)
-{
-	return SDL_malloc((size_t)size);
-}
-
-void *realloc_shim(void *mem, PHYSFS_uint64 size)
-{
-	return SDL_realloc(mem, (size_t)size);
-}
-
-int initPhysfs(char **argv)
-{
-	PHYSFS_Allocator sdlAllocator;
-	sdlAllocator.Init = nullptr;
-	sdlAllocator.Deinit = nullptr;
-	sdlAllocator.Malloc = malloc_shim;
-	sdlAllocator.Realloc = realloc_shim;
-	sdlAllocator.Free = SDL_free;
-	int physfsok = PHYSFS_init(argv[0]);
-	if (!physfsok)
-	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
-		return physfsok;
-	}
-	PHYSFS_setAllocator(&sdlAllocator);
-	physfsok = PHYSFS_setSaneConfig("yagc", "console", "ZIP", 0, 0);
-	if (!physfsok)
-	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
-		return physfsok;
-	}
-	SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "Resource Path is %s", getResourcePath().c_str() );
-	PHYSFS_mount(getResourcePath().c_str(), nullptr, 1);
-	if (!physfsok)
-	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
-	}
-	return physfsok;
-}
 
 int main(int argc, char *argv[])
 {
 
+	(void)argc;
+
 	// init SDL
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0)
+	if (init_SDL() != 0)
 	{
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
-	if (!initPhysfs(argv))
+	if (!initPhysfs("console", argv))
 	{
 		SDL_Quit();
 	}
 	SDL_GL_LoadLibrary(NULL); // Default OpenGL is fine.
 
 	// create window
-	shared_ptr<SDL_Window> window(create_window(title));
+	shared_ptr<SDL_Window> window(create_window("console", screen_width, screen_height));
 	if (!window)
 	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Unable to create SDL_Window" );
+		SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Unable to create SDL_Window");
 		return 1;
 	}
 
@@ -213,76 +99,74 @@ int main(int argc, char *argv[])
 	}
 
 	// setup OpenGL contezt
-	context = opengl_setup(renderer.get(), window.get());
+	context = opengl_setup(renderer.get(), window.get(), screen_width, screen_height);
 
-	// Now, we need keyboard and mouse
+	// Now, we need keyboard and mouse11
 	ServiceRegistry<MouseService>::initialise();
 	ServiceRegistry<KeyboardService>::initialise();
 
 	ServiceRegistry<ScriptingService>::initialise();
 	ServiceRegistry<ImageService>::initialise();
-	ServiceRegistry<GuiService>::initialise();
+	ServiceRegistry<CanvasService>::initialise();
 	ServiceRegistry<FontService>::initialise();
-
-	ServiceCheckout<GuiService> gui;
-	ServiceCheckout<FontService> fonts;
-
-	auto cozetteFont = fonts->createFont("cozette", "CozetteVector.ttf");
-	fonts->setCurrentFont(cozetteFont);
-	auto metrics = fonts->getFontMetrics();
-
-	// Disable depth test and face culling.
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-
-
-	int width, height;
-	SDL_GetWindowSize(window.get(), &width, &height);
-	glViewport(0, 0, width, height);
-	glClearColor(Colors::cornflowerblue(0),  Colors::cornflowerblue(1), Colors::cornflowerblue(2), 0.0f);
-
-	Uint32 currentTime = SDL_GetTicks();
-	Uint32 lastTime = currentTime;
-
-	float deltaTime;
-
-	// Our state
-	bool show_demo_window = true;
-	bool show_another_window = false;
-
-	SDL_Event event;
-	bool quit = false;
-	while (!quit)
+	ServiceRegistry<TextEditService>::initialise();
 	{
+		ServiceCheckout<CanvasService> canvas;
+		ServiceCheckout<FontService> fonts;
 
-		lastTime = currentTime;
-		currentTime = SDL_GetTicks();
-		deltaTime = (currentTime - lastTime) / 1000.0f;
+		auto cozetteFont = fonts->createFont("cozette", "CozetteVector.ttf");
+		fonts->setCurrentFont(cozetteFont);
+		auto metrics = fonts->getFontMetrics();
 
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_QUIT)
-			{
-				quit = true;
-			}
-			if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window.get()))
-			{
-				quit = true;
-			}
-		}
+		// Disable depth test and face culling.
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
 
+		int width, height;
+		SDL_GetWindowSize(window.get(), &width, &height);
 		glViewport(0, 0, width, height);
-		glClear(GL_COLOR_BUFFER_BIT);
-		gui->begin_frame(width, height);
-		char* message = "Hello World";
-		fonts->drawText(20, 20, message, message + 12);
-		gui->end_frame();
-		SDL_GL_SwapWindow(window.get());
+		glClearColor(Colors::cornflowerblue(0), Colors::cornflowerblue(1), Colors::cornflowerblue(2), 0.0f);
+
+		Uint32 currentTime = SDL_GetTicks();
+		Uint32 lastTime = currentTime;
+
+		float deltaTime;
+
+		SDL_Event event;
+		bool quit = false;
+		while (!quit)
+		{
+
+			lastTime = currentTime;
+			currentTime = SDL_GetTicks();
+			deltaTime = (currentTime - lastTime) / 1000.0f;
+
+			while (SDL_PollEvent(&event))
+			{
+				if (event.type == SDL_QUIT)
+				{
+					quit = true;
+				}
+				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window.get()))
+				{
+					quit = true;
+				}
+			}
+
+			glViewport(0, 0, width, height);
+			glClear(GL_COLOR_BUFFER_BIT);
+			canvas->begin_frame(width, height);
+			const char *message = "Hello World";
+			fonts->drawText(20, 20, message, message + 12);
+			canvas->end_frame();
+			SDL_GL_SwapWindow(window.get());
+		}
 	}
 
 	// Cleanup
+	ServiceRegistry<TextEditService>::shutdown();
 	ServiceRegistry<FontService>::shutdown();
-	ServiceRegistry<GuiService>::shutdown();
+	ServiceRegistry<CanvasService>::shutdown();
 	ServiceRegistry<ImageService>::shutdown();
 	ServiceRegistry<ScriptingService>::shutdown();
 
@@ -292,11 +176,7 @@ int main(int argc, char *argv[])
 	ServiceRegistry<KeyboardService>::shutdown();
 	ServiceRegistry<MouseService>::shutdown();
 
-	int phsyfhshutdown = PHYSFS_deinit();
-	if (!phsyfhshutdown)
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Physfs shutdown failed:  %s ", PHYSFS_getErrorByCode( PHYSFS_getLastErrorCode() ) );
-	}
+	shutdownPhysfs();
 	SDL_Quit();
 	return 0;
 }

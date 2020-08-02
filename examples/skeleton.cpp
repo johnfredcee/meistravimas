@@ -50,197 +50,100 @@
 #include "blendish.h"
 #include "oui.h"
 #include "gui.h"
+#include "context.h"
 
 #define USE_GUI 1
 
-bool	quit = false;
-SDL_sem* global_lock = nullptr;
-int screen_width  = 640;
+bool quit = false;
+SDL_sem *global_lock = nullptr;
+int screen_width = 640;
 int screen_height = 480;
 
-namespace venk {
+namespace venk
+{
+	std::vector<std::shared_ptr<Sprite>> spriteBank;
 
+	void render(double alpha, SDL_Window *window, SDL_Renderer *renderer)
+	{
+		(void)renderer;
+		(void)alpha;
+		(void)window;
 
-std::vector< std::shared_ptr<Sprite> > spriteBank;
-
-void render(double alpha, SDL_Window* window, SDL_Renderer* renderer) {
-	(void) renderer;
-	(void) alpha;
-	(void) window;
-
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);	
-	ServiceCheckout<SpriteService> sprites;
-	sprites->beginBatchWalk();
-	std::shared_ptr<SpriteBatch> batch = sprites->nextBatch();
-	while(batch)  {
-		batch->render(alpha, window, renderer);
-		batch = sprites->nextBatch();
-	}
-}
-
-void update(double t, double dt) {
-	(void) t;
-	(void) dt;
-	ServiceCheckout<SpriteService> sprites;
-
-}
-
-void *malloc_shim(PHYSFS_uint64 size) {
-	return SDL_malloc((size_t) size);
-}
-
-void *realloc_shim(void *mem, PHYSFS_uint64 size) {
-	return SDL_realloc(mem, (size_t) size);
-}
-
- int initPhysfs(char **argv) {
-	PHYSFS_Allocator sdlAllocator;
-	sdlAllocator.Init = nullptr;
-	sdlAllocator.Deinit = nullptr;
-	sdlAllocator.Malloc = malloc_shim;
-	sdlAllocator.Realloc = realloc_shim;
-	sdlAllocator.Free = SDL_free;
-	int physfsok = PHYSFS_init(argv[0]);
-	if(!physfsok) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
-		return physfsok;
-	}
-	PHYSFS_setAllocator(&sdlAllocator);
-	physfsok = PHYSFS_setSaneConfig("yagc", "skeleton", "ZIP", 0, 0);
-	if(!physfsok) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode() ) );
-		return physfsok;
-	}
-	std::cout << "Resource path is: " << getResourcePath() << std::endl;
-	PHYSFS_mount(getResourcePath().c_str(), nullptr, 1);
-	if(!physfsok) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "PhysicsFS Init error %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()  ) );
-	}
-	return physfsok;
-}
-
-std::shared_ptr<SDL_Window> create_window() {
-
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
- 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-
-	// create window
-	auto window_deleter = [](SDL_Window *w) {
-		if(w) SDL_DestroyWindow(w);
-	};
-	std::shared_ptr<SDL_Window> window(SDL_CreateWindow("SDLSkeleton",
-	                                   SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-	                                   screen_width, screen_height,
-	                                   SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL),
-	                                   window_deleter);
-	if(!window) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Unable to create SDL_Window" );
-	}
-	return window;
-}
-
-std::shared_ptr<SDL_Renderer> create_renderer(SDL_Window* window) {
-	// we created window, create renderer
-	auto renderer_deleter = [](SDL_Renderer *r) {
-		if(r) SDL_DestroyRenderer(r);
-	};
-	Uint32 n_drivers = SDL_GetNumRenderDrivers();
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,  "%d render drivers available", n_drivers);
-	for(Uint32 i = 0; i < n_drivers; i++) {
-		SDL_RendererInfo info;
-		SDL_GetRenderDriverInfo(i, &info);
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%d %s", i, info.name);
-	}
-	Uint32 flags = SDL_RENDERER_ACCELERATED  |  SDL_RENDERER_TARGETTEXTURE;
-	std::shared_ptr<SDL_Renderer> renderer(SDL_CreateRenderer(window, -1, flags),  renderer_deleter);
-	return renderer;
-}
-
-SDL_GLContext opengl_setup(SDL_Renderer* renderer, SDL_Window* window) {
-	// we created renderer, get info about it
-	SDL_RendererInfo info;
-	SDL_GetRendererInfo(renderer, &info);
-	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Renderer chosen %s ", info.name);
-	SDL_GLContext glctx = SDL_GL_CreateContext(window);
-	SDL_assert(glctx != nullptr);
-	
-    gladLoadGLLoader(SDL_GL_GetProcAddress);
-    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Vendor:   %s\n", glGetString(GL_VENDOR));
-    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Renderer: %s\n", glGetString(GL_RENDERER));
-    SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Version:  %s\n", glGetString(GL_VERSION));	
-
- 	GLdouble maj = 0;
-	glGetDoublev(GL_MAJOR_VERSION, &maj);
-	GLdouble min = 0;
-	glGetDoublev(GL_MINOR_VERSION, &min);
-	SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,  "OpenGL Version: %1d.%1d",  (int) maj, (int) min);
-
-	//Use Vsync
-	if(SDL_GL_SetSwapInterval(1) < 0) {
-		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Warning: Unable to set VSync! SDL Error: %s. ",  SDL_GetError() );
-	}
-	// Enable depth testing
-	glDisable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	glViewport(0, 0, screen_width, screen_height);
-	SDL_assert(glGetError() == GL_NO_ERROR);
-	return glctx;
-}
-
-void create_background(std::shared_ptr<Texture> background) {
-	ServiceCheckout<SpriteService> sprites;
-	RandomContext spriteRandom;
-	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(1, background));
-	std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(100.0f, 100.0f, 255.0f, 255.0f, 0, 0));
-	return;
-}
-
-std::weak_ptr<SpriteBatch> create_sprites(std::shared_ptr<Texture> sheet) {
-	ServiceCheckout<SpriteService> sprites;
-	RandomContext spriteRandom;
-	std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6*6, sheet));
-	for(int i = 0; i < 6; i++) {
-		for(int j = 0; j < 6; j++) {
-			float u = (float) i * 16.0f;
-			float v = (float) j * 16.0f;
-			std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, u, v));
-			sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		ServiceCheckout<SpriteService> sprites;
+		sprites->beginBatchWalk();
+		std::shared_ptr<SpriteBatch> batch = sprites->nextBatch();
+		while (batch)
+		{
+			batch->render(alpha, window, renderer);
+			batch = sprites->nextBatch();
 		}
 	}
-	return batch;
-}
 
-void renderer_setup() {
-	// does nothing now we are deprecating the render state service
-}
+	void update(double t, double dt)
+	{
+		(void)t;
+		(void)dt;
+		ServiceCheckout<SpriteService> sprites;
+	}
 
-std::shared_ptr<Texture> load_texture(const std::string& name) {
-	ServiceCheckout<ImageService> images;
-	ServiceCheckout<TextureService> textures;
-	std::shared_ptr<Image> image(images->loadImage(name.c_str()));
-	std::shared_ptr<Texture> texture(textures->makeTexture(image.get()));
-	return texture;
-}
+	void create_background(std::shared_ptr<Texture> background)
+	{
+		ServiceCheckout<SpriteService> sprites;
+		RandomContext spriteRandom;
+		std::weak_ptr<SpriteBatch> batch(sprites->addBatch(1, background));
+		std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(100.0f, 100.0f, 255.0f, 255.0f, 0, 0));
+		return;
+	}
+
+	std::weak_ptr<SpriteBatch> create_sprites(std::shared_ptr<Texture> sheet)
+	{
+		ServiceCheckout<SpriteService> sprites;
+		RandomContext spriteRandom;
+		std::weak_ptr<SpriteBatch> batch(sprites->addBatch(6 * 6, sheet));
+		for (int i = 0; i < 6; i++)
+		{
+			for (int j = 0; j < 6; j++)
+			{
+				float u = (float)i * 16.0f;
+				float v = (float)j * 16.0f;
+				std::weak_ptr<Sprite> sprite(batch.lock()->addSprite(0.0f, 0.0f, 16.0f, 16.0f, u, v));
+				sprite.lock()->setXY(spriteRandom.nextRandom() * screen_width, spriteRandom.nextRandom() * screen_height);
+			}
+		}
+		return batch;
+	}
+
+	void renderer_setup()
+	{
+		// does nothing now we are deprecating the render state service
+	}
+
+	std::shared_ptr<Texture> load_texture(const std::string &name)
+	{
+		ServiceCheckout<ImageService> images;
+		ServiceCheckout<TextureService> textures;
+		std::shared_ptr<Image> image(images->loadImage(name.c_str()));
+		std::shared_ptr<Texture> texture(textures->makeTexture(image.get()));
+		return texture;
+	}
 
 } //namespace venk
 
 using namespace venk;
 
-void update_and_render(SDL_Window* window, SDL_Renderer* renderer,
-					   double& currentTime, double& accumulator, double& dt, double& t) {
-	
+void update_and_render(SDL_Window *window, SDL_Renderer *renderer,
+					   double &currentTime, double &accumulator, double &dt, double &t)
+{
+
 	double newTime = timeNow();
 	double frameTime = newTime - currentTime;
-	if(frameTime > 0.25)
+	if (frameTime > 0.25)
 		frameTime = 0.25;
 	currentTime = newTime;
 	accumulator += frameTime;
-	while(accumulator >= dt) {
+	while (accumulator >= dt)
+	{
 		SDL_SemWait(global_lock);
 		// update
 		update(t, dt);
@@ -258,136 +161,140 @@ void update_and_render(SDL_Window* window, SDL_Renderer* renderer,
 		gui->render();
 	}
 #endif
-	SDL_GL_SwapWindow(window);	
-	SDL_SemPost(global_lock);	
+	SDL_GL_SwapWindow(window);
+	SDL_SemPost(global_lock);
 }
 
+int main(int argc, char **argv)
+{
+	(void)argc;
 
-int main(int argc, char **argv) {
-
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER |  SDL_INIT_EVENTS) != 0) {
+	if (init_SDL() != 0)
+	{
 		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
 		return 1;
-	} else {
-		(void) argc;
-		(void) argv;
-		if(SDLNet_Init() < 0) {
-			SDL_LogError(SDL_LOG_CATEGORY_SYSTEM, "SDLNet_Init: %s ", SDLNet_GetError());
-			return -1;
+	};
+	initPhysfs("Skeleton", argv);
+	ServiceRegistry<ScriptingService>::initialise();
+	if (argc > 1)
+	{
+		ServiceCheckout<ScriptingService> scripting;
+		for (int i = 0; i < argc - 1; i++)
+		{
+			scripting->load(argv[i - 1]);
 		}
-		initPhysfs(argv);
-		ServiceRegistry<ScriptingService>::initialise();
-		if (argc > 1) {
-			ServiceCheckout<ScriptingService> scripting;
-			for(int i = 0; i < argc-1; i++) {
-				scripting->load(argv[i-1]);
-			}
-		}
-		std::shared_ptr<SDL_Window> window(create_window());
-		if (window) {
-			std::shared_ptr<SDL_Renderer> renderer(create_renderer(window.get()));
-			if(renderer) {
-				SDL_GLContext glctx = opengl_setup(renderer.get(), window.get());
+	}
+	std::shared_ptr<SDL_Window> window(create_window("SDL Skeleton", screen_width, screen_height));
+	if (window)
+	{
+		std::shared_ptr<SDL_Renderer> renderer(create_renderer(window.get()));
+		if (renderer)
+		{
+			SDL_GLContext glctx = opengl_setup(renderer.get(), window.get(), screen_width, screen_height);
 
-				// Now, we need keyboard and mouse
-				ServiceRegistry<MouseService>::initialise();
-				ServiceRegistry<KeyboardService>::initialise();
-				ServiceRegistry<ImageService>::initialise();
-				ServiceRegistry<TextureService>::initialise();
+			// Now, we need keyboard and mouse
+			ServiceRegistry<MouseService>::initialise();
+			ServiceRegistry<KeyboardService>::initialise();
+			ServiceRegistry<ImageService>::initialise();
+			ServiceRegistry<TextureService>::initialise();
 
-				std::shared_ptr<Texture> background(load_texture("test.tga"));
-				std::shared_ptr<Texture> spritesheet(load_texture("boulders.png"));
-				ServiceRegistry<ProgramService>::initialise();
-				ServiceRegistry<BufferManagerService>::initialise();
-				ServiceRegistry<RenderStateService>::initialise();
-				ServiceRegistry<SpriteService>::initialise();
-				renderer_setup();
-				//create_background(background);
-				create_sprites(spritesheet);
+			std::shared_ptr<Texture> background(load_texture("test.tga"));
+			std::shared_ptr<Texture> spritesheet(load_texture("boulders.png"));
+			ServiceRegistry<ProgramService>::initialise();
+			ServiceRegistry<BufferManagerService>::initialise();
+			ServiceRegistry<RenderStateService>::initialise();
+			ServiceRegistry<SpriteService>::initialise();
+			renderer_setup();
+			//create_background(background);
+			create_sprites(spritesheet);
 #ifdef USE_GUI
-				ServiceRegistry<GuiService>::initialise();
-				{
-					ServiceCheckout<GuiService> gui;
-					int width, height;
-					SDL_GetWindowSize(window.get(), &width, &height);
-					gui->setCanvasDimensions(width, height);
-				}
+			ServiceRegistry<GuiService>::initialise();
+			{
+				ServiceCheckout<GuiService> gui;
+				int width, height;
+				SDL_GetWindowSize(window.get(), &width, &height);
+				gui->setCanvasDimensions(width, height);
+			}
 #endif
+			{
+				ServiceCheckout<ProgramService> programs;
+				std::shared_ptr<Program> backdrop_shader(programs->loadProgram("backdrop"));
+				SDL_assert(backdrop_shader->isValid());
+				double t = 0.0;
+				double dt = 0.01;
+				double currentTime = timeNow();
+				double accumulator = dt;
+				global_lock = SDL_CreateSemaphore(1);
+				SDL_Event e;
+				while (!quit)
 				{
-					ServiceCheckout<ProgramService> programs;
-					std::shared_ptr<Program> backdrop_shader(programs->loadProgram("backdrop"));
-					SDL_assert(backdrop_shader->isValid());
-					double  t    = 0.0;
-					double  dt   = 0.01;
-					double currentTime = timeNow();
-					double accumulator = dt;
-					global_lock = SDL_CreateSemaphore( 1 );
-					SDL_Event e;
-					while(!quit) {
-						update_and_render(window.get(), renderer.get(),
-										  currentTime, accumulator, dt, t);
-						
-						//Handle events on queue
-						SDL_PumpEvents();
-						while(SDL_PeepEvents(&e,1,SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0) {
-							//User requests quit
-							if(e.type == SDL_QUIT) {
-								quit = true;
-							}
-							// theoretically this code could be replaced by an event filter (TODO)
-							switch(e.type) {
-								case SDL_MOUSEWHEEL:
-								case SDL_MOUSEMOTION:
-								case SDL_MOUSEBUTTONUP:
-								case SDL_MOUSEBUTTONDOWN: {
-									SDL_SemWait(global_lock);
-									ServiceCheckout<MouseService> squeak;
-									squeak->mouse();
-									SDL_SemPost(global_lock);
-								}
-									break;
-								case SDL_KEYUP:
-								case SDL_KEYDOWN: {
-									SDL_SemWait(global_lock);
-									ServiceCheckout<KeyboardService> keyb;
-									keyb->keyboard();
-									SDL_SemPost(global_lock);
-								}
-									break;
-								default:
-									break;
-							}
+					update_and_render(window.get(), renderer.get(),
+									  currentTime, accumulator, dt, t);
+
+					//Handle events on queue
+					SDL_PumpEvents();
+					while (SDL_PeepEvents(&e, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) != 0)
+					{
+						//User requests quit
+						if (e.type == SDL_QUIT)
+						{
+							quit = true;
+						}
+						// theoretically this code could be replaced by an event filter (TODO)
+						switch (e.type)
+						{
+						case SDL_MOUSEWHEEL:
+						case SDL_MOUSEMOTION:
+						case SDL_MOUSEBUTTONUP:
+						case SDL_MOUSEBUTTONDOWN:
+						{
+							SDL_SemWait(global_lock);
+							ServiceCheckout<MouseService> squeak;
+							squeak->mouse();
+							SDL_SemPost(global_lock);
+						}
+						break;
+						case SDL_KEYUP:
+						case SDL_KEYDOWN:
+						{
+							SDL_SemWait(global_lock);
+							ServiceCheckout<KeyboardService> keyb;
+							keyb->keyboard();
+							SDL_SemPost(global_lock);
+						}
+						break;
+						default:
+							break;
 						}
 					}
-					// quit main loop
-					if (global_lock != nullptr) {
-						SDL_DestroySemaphore(global_lock);
-						global_lock = nullptr;
-					}
 				}
-#ifdef USE_GUI
-				ServiceRegistry<GuiService>::shutdown();
-#endif
-				spriteBank.erase(spriteBank.begin(), spriteBank.end());
-				ServiceRegistry<SpriteService>::shutdown();
-				ServiceRegistry<RenderStateService>::shutdown();
-				ServiceRegistry<BufferManagerService>::shutdown();
-				ServiceRegistry<ProgramService>::shutdown();
-				ServiceRegistry<TextureService>::shutdown();
-				SDL_GL_DeleteContext(glctx);
-
-				ServiceRegistry<ImageService>::shutdown();
-				ServiceRegistry<KeyboardService>::shutdown();
-				ServiceRegistry<MouseService>::shutdown();
+				// quit main loop
+				if (global_lock != nullptr)
+				{
+					SDL_DestroySemaphore(global_lock);
+					global_lock = nullptr;
+				}
 			}
+#ifdef USE_GUI
+			ServiceRegistry<GuiService>::shutdown();
+#endif
+			spriteBank.erase(spriteBank.begin(), spriteBank.end());
+			ServiceRegistry<SpriteService>::shutdown();
+			ServiceRegistry<RenderStateService>::shutdown();
+			ServiceRegistry<BufferManagerService>::shutdown();
+			ServiceRegistry<ProgramService>::shutdown();
+			ServiceRegistry<TextureService>::shutdown();
+			SDL_GL_DeleteContext(glctx);
+
+			ServiceRegistry<ImageService>::shutdown();
+			ServiceRegistry<KeyboardService>::shutdown();
+			ServiceRegistry<MouseService>::shutdown();
 		}
-		ServiceRegistry<ScriptingService>::shutdown();
-		SDLNet_Quit();
-		int phsyfhshutdown = PHYSFS_deinit();
-		if(!phsyfhshutdown) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Physfs shutdown failed:  %s ", PHYSFS_getErrorByCode( PHYSFS_getLastErrorCode() ) );
-		}
-		SDL_Quit();
-		return 0;
 	}
+	ServiceRegistry<ScriptingService>::shutdown();
+	shutdownPhysfs();
+	SDLNet_Quit();
+	SDL_Quit();
+	return 0;
 }
+

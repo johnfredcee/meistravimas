@@ -25,7 +25,7 @@
 #include "tinyscm_if.h"
 #include "image.h"
 #include "nanovg.h"
-#include "gui.h"
+#include "canvas.h"
 #include "font.h"
 
 namespace venk {
@@ -34,8 +34,8 @@ namespace venk {
 bool FontService::initialise(FontService* self)
 {
 	(void) self;
-	ServiceCheckout<GuiService> gui;
-	self->vg = gui->vg;
+	ServiceCheckout<CanvasService> canvas;
+	self->vg = canvas->vg;
 	// ServiceCheckout<ScriptingService> scripting;
 	// scheme* sc = scripting->get_scheme();
 	// register_font_functions(sc);
